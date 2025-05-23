@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth, GoogleAuthProvider, sendSignInLinkToEmail } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,15 +14,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-const provider = new GoogleAuthProvider();
-
 const auth = getAuth(app);
-sendSignInLinkToEmail(auth, email, actionCodeSettings)
-  .then((result) => {
 
-  })
-  .catch((error) => {
-    
-  });
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account',
+});
 
-export { app, analytics, auth };
+export { app, analytics, auth, googleProvider };
