@@ -120,3 +120,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+}
+
+body {
+  @apply antialiased;
+}
+
+.gradient-background {
+  background: linear-gradient(135deg, #ff4b4b 0%, #ff0000 100%);
+}
