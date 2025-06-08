@@ -22,7 +22,7 @@ export interface AuthState {
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
-    loading: false,
+    loading: true,
     error: null,
   });
 
