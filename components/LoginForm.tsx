@@ -1,23 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from './ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
 import { useState } from 'react';
-
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { LoginFormData, loginSchema } from '@/lib/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Button } from './ui/button';
+import Image from 'next/image';
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -61,96 +52,114 @@ export default function LoginForm() {
           ? error.message
           : 'An error occurred during sign in';
       toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Sign In</CardTitle>
-        <CardDescription>
-          Please enter your email and password to sign in.
-          <br />
-          If you don&apos;t have an account, you can{' '}
-          <Link href={'register'}>sign up.</Link>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+    <>
+      <h1 className="text-3xl font-bold text-center mb-2">
+        Welcome Back!
+      </h1>
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <input
-                      type="password"
-                      placeholder="Enter your password"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-        </Form>
+      <p className="text-gray-200 text-center mb-8 text-base">
+        Sign in to continue exploring TUPV campus
+      </p>
 
-       <div className="mt-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <Button 
-            variant="outline" 
-            className="w-full mt-4" 
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            Continue with Google
-          </Button>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-sm font-medium">
+            Email
+          </label>
+          <input
+            {...form.register('email')}
+            type="email"
+            id="email"
+            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+            placeholder="Enter your email"
+          />
+          {form.formState.errors.email && (
+            <p className="text-red-500 text-sm">{form.formState.errors.email.message}</p>
+          )}
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Don&apos;t have an account?{' '}
-          <Link 
-            href="/register" 
-            className="underline underline-offset-4 hover:text-primary"
-          >
-            Sign up
+        <div className="space-y-2">
+          <label htmlFor="password" className="block text-sm font-medium">
+            Password
+          </label>
+          <input
+            {...form.register('password')}
+            type="password"
+            id="password"
+            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+            placeholder="Enter your password"
+          />
+          {form.formState.errors.password && (
+            <p className="text-red-500 text-sm">{form.formState.errors.password.message}</p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="remember"
+              className="w-4 h-4 rounded border-white/20 bg-white/10 text-red-500 focus:ring-red-500 focus:ring-offset-0"
+            />
+            <label htmlFor="remember" className="ml-2">
+              Remember me
+            </label>
+          </div>
+          <Link href="/forgot-password" className="text-red-400 hover:text-red-300">
+            Forgot password?
           </Link>
-        </p>
-      </CardContent>
-    </Card>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-red-500 hover:bg-red-600 text-white py-4 px-6 rounded-xl font-semibold transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Signing in...' : 'Sign In'}
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="relative my-8 w-full">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/20"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 text-white/60 bg-black/20 backdrop-blur-sm">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Social Login */}
+      <div className="flex gap-3 w-full">
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          className="flex-1 flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Image
+            src="/images/google-icon.svg"
+            alt="Google"
+            width={24}
+            height={24}
+            className="group-hover:scale-110 transition-transform"
+          />
+          <span>Google</span>
+        </button>
+      </div>
+
+      {/* Sign Up Link */}
+      <p className="mt-8 text-center text-sm">
+        Don't have an account?{' '}
+        <Link href="/signup" className="text-red-400 hover:text-red-300 font-medium">
+          Sign up now
+        </Link>
+      </p>
+    </>
   );
 }
