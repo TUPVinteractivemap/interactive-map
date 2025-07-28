@@ -2,25 +2,70 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import InteractiveMap from '@/components/InteractiveMap';
+import { buildingCoordinates, getBuildingName } from '@/lib/routing';
 
 export default function MapPage() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [zoom, setZoom] = useState(1.5);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
+
+  // Handle mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+  };
+
+  // Handle touch gestures for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const initialDistance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      (e.currentTarget as any).initialDistance = initialDistance;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      const initialDistance = (e.currentTarget as any).initialDistance;
+      
+      if (initialDistance) {
+        const scale = currentDistance / initialDistance;
+        const zoomDelta = (scale - 1) * 0.5;
+        setZoom(prev => Math.max(0.5, Math.min(3, prev + zoomDelta)));
+        (e.currentTarget as any).initialDistance = currentDistance;
+      }
+    }
+  };
 
   useEffect(() => {
     // Only redirect if we're not loading and there's no user
     if (!loading && !user) {
-      router.push('/');
+      // Allow guest access - don't redirect
+      return;
     }
   }, [user, loading, router]);
 
-  // Show nothing while loading or if no user
-  if (loading || !user) {
+  // Show loading only while auth is loading
+  if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -33,8 +78,10 @@ export default function MapPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Searching route from', origin, 'to', destination);
+    if (origin && destination && origin !== destination) {
+      console.log('Searching route from', origin, 'to', destination);
+      // The route will be calculated automatically by the InteractiveMap component
+    }
   };
 
   const handleLogout = async () => {
@@ -122,22 +169,31 @@ export default function MapPage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <span className="text-red-600 font-medium text-lg">
-                  {user.displayName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                  {user ? (user.displayName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()) : 'G'}
                 </span>
               </div>
               <div>
                 <p className="text-gray-900 font-medium">
-                  Hello, {user.displayName || 'User'}!
+                  Hello, {user ? (user.displayName || 'User') : 'Guest'}!
                 </p>
-                <p className="text-sm text-gray-500">{user.email}</p>
+                <p className="text-sm text-gray-500">{user ? user.email : 'Guest Session'}</p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-gray-600 hover:text-red-600 font-medium text-sm transition-colors"
-            >
-              Logout
-            </button>
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="text-gray-600 hover:text-red-600 font-medium text-sm transition-colors"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/"
+                className="text-gray-600 hover:text-red-600 font-medium text-sm transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
 
@@ -165,14 +221,19 @@ export default function MapPage() {
                     <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z" />
                   </svg>
                 </div>
-                <input
-                  type="text"
+                <select
                   id="origin"
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Enter your location"
-                />
+                >
+                  <option value="">Select your location</option>
+                  {Object.entries(buildingCoordinates).map(([buildingId, coords]) => (
+                    <option key={buildingId} value={buildingId}>
+                      {getBuildingName(buildingId)}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -196,14 +257,19 @@ export default function MapPage() {
                     <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <input
-                  type="text"
+                <select
                   id="destination"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Enter your destination"
-                />
+                >
+                  <option value="">Select your destination</option>
+                  {Object.entries(buildingCoordinates).map(([buildingId, coords]) => (
+                    <option key={buildingId} value={buildingId}>
+                      {getBuildingName(buildingId)}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -226,24 +292,45 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Map Area (Temporary) */}
-      <div className="flex-1 bg-gray-100 relative h-[calc(100vh-4rem)] md:h-full">
-        {/* Temporary Map Placeholder */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-gray-400 text-center p-4">
-            <svg
-              className="h-16 md:h-24 w-16 md:w-24 mx-auto mb-4"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 4m0 13V4m0 0L9 7" />
+      {/* Map Area */}
+      <div className="flex-1 bg-white relative h-[calc(100vh-4rem)] md:h-full overflow-hidden">
+        {/* Zoom Controls */}
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+          <button
+            onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))}
+            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            title="Zoom In"
+          >
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <p className="text-lg md:text-xl font-medium">Map will be integrated here</p>
-          </div>
+          </button>
+          <button
+            onClick={() => setZoom(prev => Math.max(prev - 0.2, 0.5))}
+            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            title="Zoom Out"
+          >
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setZoom(1)}
+            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors text-xs font-medium text-gray-700"
+            title="Reset Zoom"
+          >
+            100%
+          </button>
+        </div>
+
+        {/* Map Container */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center overflow-visible"
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+        >
+          <InteractiveMap zoom={zoom} origin={origin} destination={destination} />
         </div>
       </div>
     </main>
