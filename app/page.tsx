@@ -34,7 +34,7 @@ export default function LandingPage() {
       </div>
 
       {/* Main Content Panel */}
-      <div className="backdrop-blur-sm rounded-2xl p-8 max-w-md w-full z-10">
+      <div className="rounded-2xl p-8 max-w-md w-full z-10">
         {/* Content */}
         <div className="flex flex-col items-center text-white">
           {/* Logo */}
