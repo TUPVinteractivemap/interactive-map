@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { findRoute, getBuildingName, buildingCoordinates } from '@/lib/routing';
 
-interface BuildingInfo {
+export interface BuildingInfo {
   id: string;
   name: string;
   description: string;
@@ -15,19 +15,19 @@ const buildingData: Record<string, BuildingInfo> = {
   ModernTechnologyBldg: {
     id: 'ModernTechnologyBldg',
     name: 'Modern Technology Building',
-    description: 'Houses modern technology laboratories and classrooms',
+    description: 'A NEW BUILDING OF TUPV NEAR THE EXIT AND HAS THREE FLOORS',
     type: 'Academic'
   },
   MechanicalTechnologyBldg: {
     id: 'MechanicalTechnologyBldg',
     name: 'Mechanical Technology Building',
-    description: 'Mechanical engineering laboratories and workshops',
+    description: 'MANUFACTURING ROOMS WILL BE FOUND HERE, ALSO MACHINES AND OFFICE FOR FACULTY AND STUDENTS WHO MAJORED IN MANUFACTURING ENGINEERING TECHNOLOGY',
     type: 'Academic'
   },
   AutoRefrigirationAirconTechnologyBldf: {
     id: 'AutoRefrigirationAirconTechnologyBldf',
-    name: 'Auto Refrigeration & Air Conditioning Technology Building',
-    description: 'Automotive and HVAC technology facilities',
+    name: 'Automotive & Refrigeration and Air-Condition Technology Building',
+    description: 'HVAC-R ROOMS FOR STUDENTS WILL BE FOUND HERE AND ITS OFFICE FOR FACULTY',
     type: 'Academic'
   },
   TwoStoreyTrainingInnovationChineseChamberBldg: {
@@ -38,44 +38,44 @@ const buildingData: Record<string, BuildingInfo> = {
   },
   EngineeringExtensionBldg: {
     id: 'EngineeringExtensionBldg',
-    name: 'Engineering Extension Building',
-    description: 'Engineering extension programs and facilities',
+    name: 'Engineering Building Extension',
+    description: 'MECHANICAL ENGINEERING ROOMS WILL BE FOUND IN THIS AREA LABELED AS EEB ROOMS',
     type: 'Academic'
   },
   ElectricalTechnologyBldg: {
     id: 'ElectricalTechnologyBldg',
     name: 'Electrical Technology Building',
-    description: 'Electrical engineering laboratories and classrooms',
+    description: 'ELECTRICAL ENGINEERING TECHNOLOGY BUILDING CONSISTS OF ROOMS AND OFFICES FOR ELECTRICAL TECHNOLOGY STUDENTS AND FACULTY',
     type: 'Academic'
   },
   EngineeringBldg: {
     id: 'EngineeringBldg',
     name: 'Engineering Building',
-    description: 'Main engineering building with classrooms and labs',
+    description: 'ENGINEERING BUILDING CONSISTS OF SURFACE MOUNTAIN TECHNOLOGY ROOM, OFFICE OF COLLEGE OF ENGINEERING AND REGISTRAR OFFICE',
     type: 'Academic'
   },
   TechnologyBldg: {
     id: 'TechnologyBldg',
     name: 'Technology Building',
-    description: 'Core technology building with various facilities',
+    description: 'IT IS A LECTURE BUILDING FOR 1ST YEAR STUDENTS',
     type: 'Academic'
   },
   Laboratories: {
     id: 'Laboratories',
     name: 'Laboratories',
-    description: 'Research and teaching laboratories',
+    description: 'THIS IS WHERE THE EXPERIMENTS AND LABORATORY ACTIVITIES TAKE PLACE',
     type: 'Academic'
   },
   TechnologicalInventionInnovationCenter: {
     id: 'TechnologicalInventionInnovationCenter',
     name: 'Technological Invention & Innovation Center',
-    description: 'Innovation and invention development center',
+    description: 'ON THE GROUND FLOOR OF THIS BUILDING IS FOR COLLEGE OF AUTOMATION AND CONTROL STUDENTS AND THE FIRST FLOOR IS FOR COMPUTER TECHNOLOGY STUDENTS',
     type: 'Academic'
   },
   TechnologyExtension: {
     id: 'TechnologyExtension',
     name: 'Technology Extension',
-    description: 'Technology extension services and facilities',
+    description: 'IN THIS AREA, LECTURE ROOMS FOR CHEMICAL ENGINEERING TECHNOLOGY CAN BE FOUND HERE',
     type: 'Academic'
   },
   BldgA5: {
@@ -88,26 +88,26 @@ const buildingData: Record<string, BuildingInfo> = {
   // Administrative Zone
   CampusBusinessCenter: {
     id: 'CampusBusinessCenter',
-    name: 'Campus Business Center',
-    description: 'Business and administrative services',
+    name: 'Business Center',
+    description: 'The Business Center provides professional spaces for entrepreneurship, finance, and management. It also provides students needs inside the school zone.',
     type: 'Administrative'
   },
   StockRoom1: {
     id: 'StockRoom1',
-    name: 'Stock Room 1',
-    description: 'Storage and inventory management',
+    name: 'Stock Room',
+    description: 'THIS IS WHERE STUDENTS CAN PURCHASE THE MERCHANDISES OF TUPV',
     type: 'Administrative'
   },
   SupplyOffice: {
     id: 'SupplyOffice',
     name: 'Supply Office',
-    description: 'Supply and procurement office',
+    description: 'IN THIS AREA, YOU CAN FIND THE SCHOOL AND OFFICE SUPPLIES OF DIFFERENT DEPARTMENTS',
     type: 'Administrative'
   },
   FacultyLounge: {
     id: 'FacultyLounge',
-    name: 'Faculty Lounge',
-    description: 'Faculty relaxation and meeting area',
+    name: 'Employees Lounge',
+    description: 'IN THIS AREA,WHERE THE FACULTY AND STAFFS OF TUPV CAN HANG AROUND HERE. THIS AREA IS NEAR THE CANTEEN',
     type: 'Administrative'
   },
   Offices: {
@@ -119,13 +119,13 @@ const buildingData: Record<string, BuildingInfo> = {
   AdminisitrationBldg: {
     id: 'AdminisitrationBldg',
     name: 'Administration Building',
-    description: 'Main administration building',
+    description: 'It serves as the central hub for academic planning, student services, and administrative operations. On the first floor of the building, there you can find classrooms which are used by different year levels.',
     type: 'Administrative'
   },
   TrainingCenter: {
     id: 'TrainingCenter',
     name: 'Training Center',
-    description: 'Professional training facilities',
+    description: 'USED FOR EVENTS AND MEETINGS',
     type: 'Administrative'
   },
 
@@ -133,13 +133,13 @@ const buildingData: Record<string, BuildingInfo> = {
   StudentLounge: {
     id: 'StudentLounge',
     name: 'Student Lounge',
-    description: 'Student relaxation and social area',
+    description: 'STUDENT LOUNGE IS USED FOR CAMPUS\' EVENTS AND STUDENTS CAN ALSO HANG AROUND HERE WHEN THEY HAVE VACANT TIME',
     type: 'Recreational'
   },
   BasketBallCourt: {
     id: 'BasketBallCourt',
-    name: 'Basketball Court',
-    description: 'Basketball court and sports facility',
+    name: 'TUPV Gymnasium',
+    description: 'THE GYMNASIUM OF TUPV IS USED FOR EVENTS AND P.E. SUBJECTS OF TUPV STUDENTS. BASKETBALL COURT AND COMFORT ROOMS FOR BOTH MEN AND FEMALES ARE FOUND INSIDE THE GYMNASIUM',
     type: 'Recreational'
   },
 
@@ -147,7 +147,7 @@ const buildingData: Record<string, BuildingInfo> = {
   GardenWithGazebo: {
     id: 'GardenWithGazebo',
     name: 'Garden with Gazebo',
-    description: 'Landscaped garden area with gazebo',
+    description: 'USG CANOPY LOUNGES HAS THREE CANOPY WHERE STUDENTS CAN HANG AROUND WHEN HAS A VACANT TIME',
     type: 'Conservation'
   },
   Garden: {
@@ -175,7 +175,7 @@ const buildingData: Record<string, BuildingInfo> = {
   Canteen: {
     id: 'Canteen',
     name: 'Canteen',
-    description: 'Student and faculty dining facility',
+    description: 'STUDENTS, FACULTY, VISITORS AND STAFFS OF TUPV CAN PURCHASE THEIR LUNCHES AND SNACKS HERE. ALSO, THE LOCATION HAS TABLES AND CHAIRS WHERE THEY CAN DINE IN. THIS AREA IS NEAR THE ENTRANCE OR MAIN GATE OF TUPV',
     type: 'IGP'
   },
   TUPVDormitory: {
@@ -189,7 +189,7 @@ const buildingData: Record<string, BuildingInfo> = {
   PPGSOffice: {
     id: 'PPGSOffice',
     name: 'PPGS Office',
-    description: 'PPGS administrative office',
+    description: 'OFFICES',
     type: 'Utilities'
   },
   PowerHouse: {
@@ -199,11 +199,11 @@ const buildingData: Record<string, BuildingInfo> = {
     type: 'Utilities'
   },
 
-  // Other
+  // Security
   GuardHouseMain: {
     id: 'GuardHouseMain',
-    name: 'Main Guard House',
-    description: 'Main security and access control',
+    name: 'Guard House',
+    description: 'THE GUARD HOUSE OF TUPV WHERE CAMPUS\' GUARDS ARE STATIONED',
     type: 'Security'
   }
 };
@@ -212,17 +212,39 @@ interface InteractiveMapProps {
   zoom: number;
   origin?: string;
   destination?: string;
+  onSelectBuilding?: (building: BuildingInfo) => void;
+  showInlineInfo?: boolean;
 }
 
-export default function InteractiveMap({ zoom, origin, destination }: InteractiveMapProps) {
+export default function InteractiveMap({ zoom, origin, destination, onSelectBuilding, showInlineInfo = true }: InteractiveMapProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [localZoom, setLocalZoom] = useState(zoom);
+
+  // Sync localZoom with prop zoom
+  useEffect(() => {
+    setLocalZoom(zoom);
+  }, [zoom]);
+
+  // Handle mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = -e.deltaY * 0.01;
+    setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + delta)));
+  };
 
   const handleBuildingClick = (buildingId: string) => {
     const building = buildingData[buildingId];
     if (building) {
       setSelectedBuilding(building);
+      if (onSelectBuilding) {
+        onSelectBuilding(building);
+      }
     }
   };
 
@@ -243,6 +265,56 @@ export default function InteractiveMap({ zoom, origin, destination }: Interactiv
       setCurrentRoute([]);
     }
   }, [origin, destination]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch-to-zoom
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const initialDistance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      (e.currentTarget as any).initialDistance = initialDistance;
+    } else if (e.touches.length === 1) {
+      // Single touch for panning
+      const touch = e.touches[0];
+      setTouchStart({ x: touch.clientX - position.x, y: touch.clientY - position.y });
+      setIsDragging(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch-to-zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      const initialDistance = (e.currentTarget as any).initialDistance;
+      
+      if (initialDistance) {
+        const scale = currentDistance / initialDistance;
+        const zoomDelta = (scale - 1) * 0.5;
+        setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + zoomDelta)));
+        (e.currentTarget as any).initialDistance = currentDistance;
+      }
+    } else if (e.touches.length === 1 && touchStart) {
+      // Single touch panning
+      const touch = e.touches[0];
+      const newX = touch.clientX - touchStart.x;
+      const newY = touch.clientY - touchStart.y;
+      setPosition({ x: newX, y: newY });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTouchStart(null);
+  };
 
   const getBuildingColor = (buildingId: string, type: string) => {
     if (hoveredBuilding === buildingId) {
@@ -272,7 +344,7 @@ export default function InteractiveMap({ zoom, origin, destination }: Interactiv
   };
 
   return (
-    <div className="relative">
+    <div className="relative" onWheel={handleWheel}>
       {/* SVG Map */}
       <svg 
         width="1920" 
@@ -280,12 +352,31 @@ export default function InteractiveMap({ zoom, origin, destination }: Interactiv
         viewBox="0 0 1920 1080" 
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-auto"
+        className="w-full h-full object-contain"
         style={{
-          transform: `scale(${zoom})`,
+          transform: `scale(${localZoom}) translate(${position.x}px, ${position.y}px)`,
           transformOrigin: 'center',
-          transition: 'transform 0.3s ease-in-out'
+          transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none' // Prevent browser handling of touch events
         }}
+        onMouseDown={(e) => {
+          setIsDragging(true);
+          setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+        }}
+        onMouseMove={(e) => {
+          if (isDragging) {
+            const newX = e.clientX - dragStart.x;
+            const newY = e.clientY - dragStart.y;
+            setPosition({ x: newX, y: newY });
+          }
+        }}
+        onMouseUp={() => setIsDragging(false)}
+        onMouseLeave={() => setIsDragging(false)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         <g id="Slide 16:9 - 1">
           {/* Main Road */}
@@ -375,11 +466,26 @@ export default function InteractiveMap({ zoom, origin, destination }: Interactiv
           <path id="Vector 14" d="M1022.5 475.5L993.034 526.536M993.034 526.536L993 526.595L991.5 525.729L989.034 530L993.5 532.578L994.75 530.413M993.034 526.536L996 528.248L994.75 530.413M994.75 530.413L1005.29 536.5L1011.51 525.729L1041.42 543L1026.5 568.85L1021.56 566L1034.84 543L1013.04 530.413L1001 551.27L997.935 549.5L1005.29 536.756" stroke="#1E1E1E"/>
           <path id="Vector 16" d="M818.5 354.5L821.964 356.5L836.5 331.323L803.5 312.271L805.966 308L796 302.246L736.386 405.5L776.5 498L836.5 460.5L840.5 453.572" stroke="#1E1E1E"/>
           <path id="Vector 22" d="M853 493.5L856.308 495.41M826.811 526.5L824.5 530.502L838.353 538.5L861.5 498.407L856.308 495.41M826.811 526.5L835.471 531.5L856.308 495.41M826.811 526.5L801 511.598L804.809 505" stroke="#1E1E1E"/>
+          
+          {/* Additional Map Components
+          <path id="Sidewalk1" d="M500 717L513 722L944 914.5L945 916L500.5 717.5L500 717Z" fill="#CCCCCC" stroke="#1E1E1E"/>
+          <path id="Sidewalk2" d="M856 66L857 67.5L935.5 79.5L934.5 81.5L856 66Z" fill="#CCCCCC" stroke="#1E1E1E"/>
+          <path id="Sidewalk3" d="M1378 163L1379 164.29L1160.5 540L1159 539L1378 163Z" fill="#CCCCCC" stroke="#1E1E1E"/> */}
+          
+          {/* Road Markings
+          <path id="RoadMarking1" d="M945.959 919L947 920L386 668.5L385 667.5L945.959 919Z" fill="#FFFFFF"/>
+          <path id="RoadMarking2" d="M1416.5 104L1417.5 105L945.959 919L945 918L1416.5 104Z" fill="#FFFFFF"/>
+          <path id="RoadMarking3" d="M371 694.481L372 695.5L479 741L478 740L371 694.481Z" fill="#FFFFFF"/>
+          <path id="RoadMarking4" d="M407.409 865L408.5 866L431.5 875.5L430.5 874.5L407.409 865Z" fill="#FFFFFF"/>
+          <path id="RoadMarking5" d="M501.648 754L502.5 755L884.5 929.5L883.5 928.5L501.648 754Z" fill="#FFFFFF"/>
+          <path id="RoadMarking6" d="M835.714 1014L836.5 1015L861.5 1025L860.5 1024L835.714 1014Z" fill="#FFFFFF"/>
+          <path id="RoadMarking7" d="M909.709 941.5L910.5 942.5L1073 1014L1072 1013L909.709 941.5Z" fill="#FFFFFF"/>
+          <path id="RoadMarking8" d="M1088.88 986.5L1089.5 987.5L970.5 931.5L969.5 930.5L1088.88 986.5Z" fill="#FFFFFF"/> */}
         </g>
       </svg>
 
-      {/* Building Info Modal */}
-      {selectedBuilding && (
+      {/* Building Info Modal (can be disabled by parent) */}
+      {showInlineInfo && selectedBuilding && (
         <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm z-20">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-gray-800">{selectedBuilding.name}</h3>
@@ -445,4 +551,4 @@ function getBuildingPath(buildingId: string): string {
   };
 
   return paths[buildingId] || "";
-} 
+}
