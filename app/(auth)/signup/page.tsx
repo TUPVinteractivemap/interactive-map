@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import RegisterForm from '@/components/RegisterForm';
+export const dynamic = 'force-dynamic';
 
 export default function SignUpPage() {
   return (
