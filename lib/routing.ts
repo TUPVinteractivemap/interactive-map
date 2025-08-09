@@ -92,17 +92,9 @@ function isPointInBuilding(x: number, y: number): boolean {
 }
 
 // Check if a line segment intersects with any building
-function lineIntersectsBuilding(x1: number, y1: number, x2: number, y2: number): boolean {
-  // Check multiple points along the line
-  const steps = 10;
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const x = x1 + t * (x2 - x1);
-    const y = y1 + t * (y2 - y1);
-    if (isPointInBuilding(x, y)) {
-      return true;
-    }
-  }
+// Legacy function kept for reference; not used in ROUTING-only pathing
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function lineIntersectsBuilding(_x1: number, _y1: number, _x2: number, _y2: number): boolean {
   return false;
 }
 
