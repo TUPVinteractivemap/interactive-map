@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import RegisterForm from '@/components/RegisterForm';
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function SignUpPage() {
   return (

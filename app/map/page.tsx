@@ -11,6 +11,7 @@ import { buildingCoordinates, getBuildingName } from '@/lib/routing';
 // Disable static generation/prerendering for this page to avoid server-side
 // Firebase initialization during build (Vercel static export phase)
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function MapPage() {
   const [origin, setOrigin] = useState('');
