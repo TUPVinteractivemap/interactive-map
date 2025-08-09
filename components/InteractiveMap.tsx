@@ -400,32 +400,7 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
           <path id="OpenSpace3" d="M934.5 81.5L935.5 79.5L1378 163L1160.5 540L1065.5 485L1067 482.402L1049.5 472.5L1122.82 345.5L988.59 268L996.095 255L1056 151.242L934.5 81.5Z" fill="#77E360" stroke="#1E1E1E"/>
           <path id="OpenSpace2" d="M972 301L1071.5 357.5L1042.5 409L1025.5 398.5L1017 414.5L1033.5 424L1013 459.5L979.5 440.5L976.5 445.5L885 393L922 328L948.5 342.5L972 301Z" fill="#77E360" stroke="#1E1E1E"/>
 
-          {/* Route Visualization */}
-          {currentRoute.length > 1 && (
-            <>
-              {/* Route line */}
-              <path
-                d={`M ${currentRoute.map(point => `${point.x} ${point.y}`).join(' L ')}`}
-                stroke="#FF6B35"
-                strokeWidth="4"
-                fill="none"
-                strokeDasharray="10,5"
-                className="animate-pulse"
-              />
-              {/* Route points */}
-              {currentRoute.map((point, index) => (
-                <circle
-                  key={index}
-                  cx={point.x}
-                  cy={point.y}
-                  r={index === 0 ? "8" : index === currentRoute.length - 1 ? "8" : "4"}
-                  fill={index === 0 ? "#4CAF50" : index === currentRoute.length - 1 ? "#F44336" : "#FF9800"}
-                  stroke="#FFFFFF"
-                  strokeWidth="2"
-                />
-              ))}
-            </>
-          )}
+          {/* Route Visualization moved later to render above buildings */}
 
           {/* Clickable Buildings */}
           {Object.entries(buildingData).map(([buildingId, building]) => (
@@ -442,6 +417,15 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
               onMouseLeave={handleBuildingLeave}
             />
           ))}
+
+          {/* Map Outline / Paths */}
+          {/* Hidden routing path used for navigation */}
+          <path 
+            id="ROUTING" 
+            d="M767.5 522.5L762.881 530.5L685.377 485.753M767.5 522.5L759 517.593L771 496.808L771.755 495.5L732 405M767.5 522.5L774.032 526.318M511.81 722L589.183 587.987M732 405L685.377 485.753M732 405L794.354 297M685.377 485.753L657.5 469.658L589.183 587.987M794.354 297L762.5 278.609L828.5 164.294L876.5 81.1554L994.876 149.5M794.354 297L831 318.158M809 393.632L847.181 327.5L831 318.158M831 318.158L853.833 278.609L818.5 258.209M818.5 258.209L801.3 288M818.5 258.209L842 217.506M994.876 190.428L991.573 188.521M842 217.506L891.944 131L991.573 188.521M842 217.506L964.318 288.127M1017.88 467L1075.91 366.5L1071.49 350L964.318 288.127M1017.88 467L982 446.283L978.699 452M1017.88 467L1037.5 478.326L1015.49 515L1032.59 524.871M947.5 506.039L978.699 452M978.699 452L880.5 395.305M880.5 395.305L928.307 312.5L944.762 322L964.318 288.127M880.5 395.305L842.5 461.123M842.5 461.123L795 490L774.032 526.318M842.5 461.123L870 477M924.65 614.344L967.573 540M924.65 614.344L911 606.367M924.65 614.344L1054 689.941M774.032 526.318L824.498 555.812M870 477L970.459 535L967.573 540M870 477L824.498 555.812M824.498 555.812L911 606.367M967.573 540L1027.33 574.5L1050.13 535M1050.13 535L1095 560.904M1050.13 535L1032.59 524.871M1095 560.904L1135.87 584.5L1141.93 588M1095 560.904L1161.18 446.283L1250.5 291.57L1216.6 272L1182.25 331.5M1182.25 331.5L1023.5 239.844L1008.11 266.5C991.929 258.987 960.04 243.138 961.942 239.844C963.843 236.551 982.488 204.257 991.573 188.521M1182.25 331.5L1100 473.965L1087.94 467L1071.49 457.502L1032.59 524.871M1141.93 588L1327.55 266.5L1348.52 278.609M1141.93 588L1075.83 702.5L1069.5 699L1054 689.941M911 606.367L868.776 679.5L858.5 673.567L844.5 697.816L840.352 705M840.352 705L785.908 673.567L738.161 646M840.352 705L785.908 804L678.5 753M840.352 705L960.73 774.5L922.913 840L935 846.978L920.842 871.5L947.5 886.891L956.386 871.5M738.161 646L726.037 667M738.161 646L751 623.762L726.037 667M726.037 667L589.183 587.987M726.037 667L676.385 753M1054 689.941L1035.2 722.5L1040.5 725.559L956.386 871.249" 
+            stroke="transparent" 
+            fill="none"
+          />
 
           {/* Map Outline / Paths */}
           <path id="Vector 21" d="M895.5 729.5L932.5 665.414L1038.5 726.613L961.778 859.5L942 848.081L940.315 851L962.832 864L1043 725.144L1037.55 722L1049.39 701.5L1046 699.543L1034.19 720L946.5 669.373L957.685 650L939.498 639.5" stroke="#1E1E1E"/>
@@ -466,22 +450,22 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
           <path id="Vector 14" d="M1022.5 475.5L993.034 526.536M993.034 526.536L993 526.595L991.5 525.729L989.034 530L993.5 532.578L994.75 530.413M993.034 526.536L996 528.248L994.75 530.413M994.75 530.413L1005.29 536.5L1011.51 525.729L1041.42 543L1026.5 568.85L1021.56 566L1034.84 543L1013.04 530.413L1001 551.27L997.935 549.5L1005.29 536.756" stroke="#1E1E1E"/>
           <path id="Vector 16" d="M818.5 354.5L821.964 356.5L836.5 331.323L803.5 312.271L805.966 308L796 302.246L736.386 405.5L776.5 498L836.5 460.5L840.5 453.572" stroke="#1E1E1E"/>
           <path id="Vector 22" d="M853 493.5L856.308 495.41M826.811 526.5L824.5 530.502L838.353 538.5L861.5 498.407L856.308 495.41M826.811 526.5L835.471 531.5L856.308 495.41M826.811 526.5L801 511.598L804.809 505" stroke="#1E1E1E"/>
-          
-          {/* Additional Map Components
-          <path id="Sidewalk1" d="M500 717L513 722L944 914.5L945 916L500.5 717.5L500 717Z" fill="#CCCCCC" stroke="#1E1E1E"/>
-          <path id="Sidewalk2" d="M856 66L857 67.5L935.5 79.5L934.5 81.5L856 66Z" fill="#CCCCCC" stroke="#1E1E1E"/>
-          <path id="Sidewalk3" d="M1378 163L1379 164.29L1160.5 540L1159 539L1378 163Z" fill="#CCCCCC" stroke="#1E1E1E"/> */}
-          
-          {/* Road Markings
-          <path id="RoadMarking1" d="M945.959 919L947 920L386 668.5L385 667.5L945.959 919Z" fill="#FFFFFF"/>
-          <path id="RoadMarking2" d="M1416.5 104L1417.5 105L945.959 919L945 918L1416.5 104Z" fill="#FFFFFF"/>
-          <path id="RoadMarking3" d="M371 694.481L372 695.5L479 741L478 740L371 694.481Z" fill="#FFFFFF"/>
-          <path id="RoadMarking4" d="M407.409 865L408.5 866L431.5 875.5L430.5 874.5L407.409 865Z" fill="#FFFFFF"/>
-          <path id="RoadMarking5" d="M501.648 754L502.5 755L884.5 929.5L883.5 928.5L501.648 754Z" fill="#FFFFFF"/>
-          <path id="RoadMarking6" d="M835.714 1014L836.5 1015L861.5 1025L860.5 1024L835.714 1014Z" fill="#FFFFFF"/>
-          <path id="RoadMarking7" d="M909.709 941.5L910.5 942.5L1073 1014L1072 1013L909.709 941.5Z" fill="#FFFFFF"/>
-          <path id="RoadMarking8" d="M1088.88 986.5L1089.5 987.5L970.5 931.5L969.5 930.5L1088.88 986.5Z" fill="#FFFFFF"/> */}
         </g>
+        {/* Route Visualization - above buildings and outlines */}
+        {currentRoute.length > 1 && (
+          <g style={{ pointerEvents: 'none' }}>
+            <path
+              d={`M ${currentRoute.map(point => `${point.x} ${point.y}`).join(' L ')}`}
+              stroke="#FF6B35"
+              strokeWidth="4"
+              fill="none"
+              strokeDasharray="10,5"
+            />
+            {/* Start and End markers */}
+            <circle cx={currentRoute[0].x} cy={currentRoute[0].y} r="9" fill="#4CAF50" stroke="#FFFFFF" strokeWidth="2" />
+            <circle cx={currentRoute[currentRoute.length - 1].x} cy={currentRoute[currentRoute.length - 1].y} r="9" fill="#F44336" stroke="#FFFFFF" strokeWidth="2" />
+          </g>
+        )}
       </svg>
 
       {/* Building Info Modal (can be disabled by parent) */}
