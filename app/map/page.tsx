@@ -104,6 +104,11 @@ export default function MapPage() {
     }
   };
 
+  // Derived labels for UX
+  const originName = origin ? getBuildingName(origin) : '';
+  const destinationName = destination ? getBuildingName(destination) : '';
+  const isValidRoute = !!origin && !!destination && origin !== destination;
+
   return (
     <main className="flex flex-col md:flex-row h-screen relative overflow-hidden bg-white">
       {/* Mobile Toggle Button (Only shows when sidebar is closed) */}
@@ -336,10 +341,34 @@ export default function MapPage() {
                   {/* Search Button */}
                   <button
                     type="submit"
-                    className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                    className="w-full bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
                   >
                     Find Route
                   </button>
+
+                  {/* Route Summary */}
+                  <div className="rounded-lg border bg-white/60 p-3 text-sm flex items-start gap-3">
+                    <div className="mt-1">
+                      <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      {isValidRoute ? (
+                        <>
+                          <div className="text-gray-800">
+                            <span className="font-medium">From</span>: {originName}
+                          </div>
+                          <div className="text-gray-800">
+                            <span className="font-medium">To</span>: {destinationName}
+                          </div>
+                          <div className="mt-2 text-gray-500 text-xs">Routes follow campus footpaths only. Move the map to preview.</div>
+                        </>
+                      ) : (
+                        <div className="text-gray-500">Select both a starting location and a destination.</div>
+                      )}
+                    </div>
+                  </div>
                 </form>
               ) : (
                 // Guest message

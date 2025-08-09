@@ -489,12 +489,7 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
         </div>
       )}
 
-      {/* Hover Tooltip */}
-      {hoveredBuilding && buildingData[hoveredBuilding] && (
-        <div className="absolute bg-black text-white text-sm px-2 py-1 rounded pointer-events-none z-10">
-          {buildingData[hoveredBuilding].name}
-        </div>
-      )}
+      {/* Debug hover tooltip removed */}
     </div>
   );
 }
