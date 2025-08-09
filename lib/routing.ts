@@ -84,12 +84,7 @@ export const buildingAreas: Array<{
   { id: 'GuardHouseMain', x1: 1025, y1: 685, x2: 1080, y2: 740 }
 ];
 
-// Check if a point is inside any building area
-function isPointInBuilding(x: number, y: number): boolean {
-  return buildingAreas.some(building => 
-    x >= building.x1 && x <= building.x2 && y >= building.y1 && y <= building.y2
-  );
-}
+// Point-in-building helper is not needed for ROUTING-only navigation; removed for clean build
 
 // Check if a line segment intersects with any building
 // Legacy function kept for reference; not used in ROUTING-only pathing
