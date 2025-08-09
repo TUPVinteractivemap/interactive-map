@@ -8,6 +8,10 @@ import { useRouter } from 'next/navigation';
 import InteractiveMap, { BuildingInfo } from '@/components/InteractiveMap';
 import { buildingCoordinates, getBuildingName } from '@/lib/routing';
 
+// Disable static generation/prerendering for this page to avoid server-side
+// Firebase initialization during build (Vercel static export phase)
+export const dynamic = 'force-dynamic';
+
 export default function MapPage() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
