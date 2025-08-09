@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,8 +15,7 @@ export default function MapPage() {
   const [zoom, setZoom] = useState(2);
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [isMainSidebarCollapsed, setIsMainSidebarCollapsed] = useState(false);
-  const [isDetailsSidebarCollapsed, setIsDetailsSidebarCollapsed] = useState(false);
-  const [isMobileDetailsOpen, setIsMobileDetailsOpen] = useState(false);
+  // removed unused sidebar/detail state
   const { user, loading, logout } = useAuth();
   const router = useRouter();
 
@@ -28,6 +27,7 @@ export default function MapPage() {
   };
 
   // Handle touch gestures for mobile
+  const pinchInitialDistance = useRef<number | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       const touch1 = e.touches[0];
@@ -36,7 +36,7 @@ export default function MapPage() {
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY
       );
-      (e.currentTarget as any).initialDistance = initialDistance;
+      pinchInitialDistance.current = initialDistance;
     }
   };
 
@@ -49,23 +49,18 @@ export default function MapPage() {
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY
       );
-      const initialDistance = (e.currentTarget as any).initialDistance;
+      const initialDistance = pinchInitialDistance.current;
       
       if (initialDistance) {
         const scale = currentDistance / initialDistance;
         const zoomDelta = (scale - 1) * 0.5;
         setZoom(prev => Math.max(0.5, Math.min(3, prev + zoomDelta)));
-        (e.currentTarget as any).initialDistance = currentDistance;
+        pinchInitialDistance.current = currentDistance;
       }
     }
   };
 
-  // Open mobile details when a building is selected
-  useEffect(() => {
-    if (selectedBuilding) {
-      setIsMobileDetailsOpen(true);
-    }
-  }, [selectedBuilding]);
+  // No mobile bottom sheet auto-open
 
   useEffect(() => {
     // Only redirect if we're not loading and there's no user
@@ -293,7 +288,7 @@ export default function MapPage() {
                         className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="">Select your location</option>
-                        {Object.entries(buildingCoordinates).map(([buildingId, coords]) => (
+                        {Object.entries(buildingCoordinates).map(([buildingId]) => (
                           <option key={buildingId} value={buildingId}>
                             {getBuildingName(buildingId)}
                           </option>
@@ -329,7 +324,7 @@ export default function MapPage() {
                         className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       >
                         <option value="">Select your destination</option>
-                        {Object.entries(buildingCoordinates).map(([buildingId, coords]) => (
+                        {Object.entries(buildingCoordinates).map(([buildingId]) => (
                           <option key={buildingId} value={buildingId}>
                             {getBuildingName(buildingId)}
                           </option>
