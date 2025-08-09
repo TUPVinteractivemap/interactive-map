@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
+// Prevent prerender to avoid initializing Firebase during build on the landing page
+export const dynamic = 'force-dynamic';
+
 export default function LandingPage() {
   const { user } = useAuth();
   const router = useRouter();
