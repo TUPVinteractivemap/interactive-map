@@ -31,8 +31,9 @@ export default function RegisterForm() {
       await signUp(values);
       toast.success('Account created successfully!');
       router.push('/login');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create account');
+  } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to create account';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -44,8 +45,9 @@ export default function RegisterForm() {
       await signInWithGoogle();
       toast.success('Successfully signed in with Google!');
       router.push('/');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in with Google');
+  } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
