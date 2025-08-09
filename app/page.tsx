@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 
 // Prevent prerender to avoid initializing Firebase during build on the landing page
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function LandingPage() {
   const { user } = useAuth();
