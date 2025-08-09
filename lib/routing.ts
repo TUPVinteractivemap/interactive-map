@@ -426,91 +426,10 @@ export function findRoute(fromBuilding: string, toBuilding: string): Array<{ x: 
 }
 
 // Find a safe waypoint when the original is inside a building
-function findSafeWaypoint(
-  originalWaypoint: { x: number; y: number }, 
-  start: { x: number; y: number }, 
-  end: { x: number; y: number },
-  waypointIndex: number,
-  totalWaypoints: number
-): { x: number; y: number } {
-  const baseX = originalWaypoint.x;
-  const baseY = originalWaypoint.y;
-  
-  // Try different directions and distances to find a safe spot
-  const directions = [
-    { dx: 0, dy: -80 },   // North
-    { dx: 80, dy: 0 },    // East
-    { dx: 0, dy: 80 },    // South
-    { dx: -80, dy: 0 },   // West
-    { dx: 60, dy: -60 },  // Northeast
-    { dx: 60, dy: 60 },   // Southeast
-    { dx: -60, dy: 60 },  // Southwest
-    { dx: -60, dy: -60 }, // Northwest
-    { dx: 0, dy: -120 },  // Further North
-    { dx: 120, dy: 0 },   // Further East
-    { dx: 0, dy: 120 },   // Further South
-    { dx: -120, dy: 0 },  // Further West
-  ];
-  
-  for (const dir of directions) {
-    const candidate = {
-      x: baseX + dir.dx,
-      y: baseY + dir.dy
-    };
-    
-    // Check if candidate is safe and not too far from the intended path
-    if (!isPointInBuilding(candidate.x, candidate.y)) {
-      const distanceFromPath = Math.abs((end.y - start.y) * candidate.x - (end.x - start.x) * candidate.y + end.x * start.y - end.y * start.x) / Math.sqrt((end.y - start.y) ** 2 + (end.x - start.x) ** 2);
-      
-      if (distanceFromPath < 200) { // Don't go too far from the intended path
-        return candidate;
-      }
-    }
-  }
-  
-  // If no safe spot found, return a point further away
-  return {
-    x: baseX + (baseX > 960 ? -150 : 150), // Move away from center
-    y: baseY + (baseY > 540 ? -150 : 150)
-  };
-}
+// Legacy helper (unused) removed for clean build
 
 // Find an alternative path when direct path intersects buildings
-function findAlternativePath(from: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } | null {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  // Try perpendicular directions
-  const perpendicular1 = { x: from.x - dy * 0.3, y: from.y + dx * 0.3 };
-  const perpendicular2 = { x: from.x + dy * 0.3, y: from.y - dx * 0.3 };
-  
-  // Check if perpendicular paths are safe
-  if (!isPointInBuilding(perpendicular1.x, perpendicular1.y) && 
-      !lineIntersectsBuilding(from.x, from.y, perpendicular1.x, perpendicular1.y)) {
-    return perpendicular1;
-  }
-  
-  if (!isPointInBuilding(perpendicular2.x, perpendicular2.y) && 
-      !lineIntersectsBuilding(from.x, from.y, perpendicular2.x, perpendicular2.y)) {
-    return perpendicular2;
-  }
-  
-  // Try a curved path
-  const midPoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-  const offset = distance * 0.2;
-  
-  const curvedPoint = {
-    x: midPoint.x + (dy / distance) * offset,
-    y: midPoint.y - (dx / distance) * offset
-  };
-  
-  if (!isPointInBuilding(curvedPoint.x, curvedPoint.y)) {
-    return curvedPoint;
-  }
-  
-  return null;
-}
+// Legacy helper (unused) removed for clean build
 
 // Get building name by ID
 export function getBuildingName(buildingId: string): string {

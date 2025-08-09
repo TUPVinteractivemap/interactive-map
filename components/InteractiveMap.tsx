@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { findRoute, getBuildingName, buildingCoordinates } from '@/lib/routing';
+import { findRoute } from '@/lib/routing';
 
 export interface BuildingInfo {
   id: string;
@@ -275,7 +275,7 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY
       );
-      (e.currentTarget as any).initialDistance = initialDistance;
+      (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = initialDistance;
     } else if (e.touches.length === 1) {
       // Single touch for panning
       const touch = e.touches[0];
@@ -294,13 +294,13 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY
       );
-      const initialDistance = (e.currentTarget as any).initialDistance;
+      const initialDistance = (e.currentTarget as unknown as { initialDistance?: number }).initialDistance;
       
       if (initialDistance) {
         const scale = currentDistance / initialDistance;
         const zoomDelta = (scale - 1) * 0.5;
         setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + zoomDelta)));
-        (e.currentTarget as any).initialDistance = currentDistance;
+        (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = currentDistance;
       }
     } else if (e.touches.length === 1 && touchStart) {
       // Single touch panning
