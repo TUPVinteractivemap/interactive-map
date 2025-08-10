@@ -19,6 +19,7 @@ export default function RegisterForm() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
+      studentId: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -81,6 +82,26 @@ export default function RegisterForm() {
         </div>
 
         <div className="space-y-2">
+          <label htmlFor="studentId" className="block text-sm font-medium">
+            Student ID Number
+          </label>
+          <input
+            {...form.register('studentId')}
+            type="text"
+            id="studentId"
+            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+            placeholder="TUPV-00-0000"
+            maxLength={12}
+          />
+          <p className="text-xs text-white/60">
+            Format: TUPV-YY-XXXX (e.g., TUPV-24-1234)
+          </p>
+          {form.formState.errors.studentId && (
+            <p className="text-red-500 text-sm">{form.formState.errors.studentId.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium">
             Email
           </label>
@@ -89,8 +110,11 @@ export default function RegisterForm() {
             type="email"
             id="email"
             className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-            placeholder="Enter your email"
+             placeholder="yourname@tup.edu.ph"
           />
+          <p className="text-xs text-white/60">
+            Only @tup.edu.ph email addresses are accepted
+          </p>
           {form.formState.errors.email && (
             <p className="text-red-500 text-sm">{form.formState.errors.email.message}</p>
           )}
