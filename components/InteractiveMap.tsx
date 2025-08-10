@@ -298,16 +298,25 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
       
       if (initialDistance) {
         const scale = currentDistance / initialDistance;
-        const zoomDelta = (scale - 1) * 0.5;
+        const zoomDelta = (scale - 1) * 0.3; // Reduced zoom sensitivity
         setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + zoomDelta)));
         (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = currentDistance;
       }
     } else if (e.touches.length === 1 && touchStart) {
-      // Single touch panning
+      // Single touch panning with reduced sensitivity
       const touch = e.touches[0];
-      const newX = touch.clientX - touchStart.x;
-      const newY = touch.clientY - touchStart.y;
-      setPosition({ x: newX, y: newY });
+      const deltaX = touch.clientX - touchStart.x - position.x;
+      const deltaY = touch.clientY - touchStart.y - position.y;
+      
+      // Add dead zone to prevent accidental movements
+      const deadZone = 3; // pixels
+      if (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone) {
+        // Reduce sensitivity by applying a factor
+        const sensitivityFactor = 0.6; // Reduced from 1.0 to 0.6
+        const newX = position.x + (deltaX * sensitivityFactor);
+        const newY = position.y + (deltaY * sensitivityFactor);
+        setPosition({ x: newX, y: newY });
+      }
     }
   };
 
