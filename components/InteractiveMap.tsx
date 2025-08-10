@@ -15,31 +15,31 @@ const buildingData: Record<string, BuildingInfo> = {
   ModernTechnologyBldg: {
     id: 'ModernTechnologyBldg',
     name: 'Modern Technology Building',
-    description: 'A NEW BUILDING OF TUPV NEAR THE EXIT AND HAS THREE FLOORS',
+    description: 'The Modern Technology Building is a new addition to the facilities and buildings of the University. It is located near the exit and has three floors.',
     type: 'Academic'
   },
   MechanicalTechnologyBldg: {
     id: 'MechanicalTechnologyBldg',
     name: 'Mechanical Technology Building',
-    description: 'MANUFACTURING ROOMS WILL BE FOUND HERE, ALSO MACHINES AND OFFICE FOR FACULTY AND STUDENTS WHO MAJORED IN MANUFACTURING ENGINEERING TECHNOLOGY',
+    description: 'The Mechanical Technology Building offers machineries and offices for faculty members and students taking Manufacturing Engineering Technology. Manufacturing Rooms can be found here.',
     type: 'Academic'
   },
   AutoRefrigirationAirconTechnologyBldf: {
     id: 'AutoRefrigirationAirconTechnologyBldf',
     name: 'Automotive & Refrigeration and Air-Condition Technology Building',
-    description: 'HVAC-R ROOMS FOR STUDENTS WILL BE FOUND HERE AND ITS OFFICE FOR FACULTY',
+    description: 'The Automotive & Refrigeration and Air-Condition Technology Building provides HVAR-R rooms for students under their course. Faculty Rooms can also be found here.',
     type: 'Academic'
   },
   TwoStoreyTrainingInnovationChineseChamberBldg: {
     id: 'TwoStoreyTrainingInnovationChineseChamberBldg',
     name: 'Two-Storey Training Innovation & Chinese Chamber Building',
-    description: 'Training facilities and innovation center',
+    description: 'The Two-Storey Training Innovation & Chinese Chamber Building is a training facility and innovation center. It is located near the main entrance.',
     type: 'Academic'
   },
   EngineeringExtensionBldg: {
     id: 'EngineeringExtensionBldg',
     name: 'Engineering Building Extension',
-    description: 'MECHANICAL ENGINEERING ROOMS WILL BE FOUND IN THIS AREA LABELED AS EEB ROOMS',
+    description: 'MECHANICAL ENGINEERING ROOMS WILL BE FOUND IN THIS AREA LABELED AS EEB ROOMS', 
     type: 'Academic'
   },
   ElectricalTechnologyBldg: {
