@@ -57,7 +57,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-gray-200 text-center mb-10 text-lg">
-            TUPV Interactive Map is designed to help students, faculty, and visitors navigate the Technological University of the Philippines Visayas (TUPV) campus with ease.
+            The TUPV Interactive Map is designed to help students, faculty, and visitors navigate the Technological University of the Philippines Visayas (TUPV) campus with ease.
           </p>
 
           {/* Action Buttons */}
