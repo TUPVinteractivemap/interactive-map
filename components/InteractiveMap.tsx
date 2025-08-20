@@ -497,8 +497,6 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
           </span>
         </div>
       )}
-
-      {/* Debug hover tooltip removed */}
     </div>
   );
 }
