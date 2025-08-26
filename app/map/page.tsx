@@ -5,8 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import InteractiveMap, { BuildingInfo } from '@/components/InteractiveMap';
-import { buildingCoordinates, getBuildingName } from '@/lib/routing';
+import InteractiveMap from '@/components/InteractiveMap';
+import { BuildingInfo } from '@/lib/buildings';
+import { buildingCoordinates, getBuildingName, loadBuildingCoordinates } from '@/lib/routing';
 
 // Disable static generation/prerendering for this page to avoid server-side
 // Firebase initialization during build (Vercel static export phase)
@@ -74,6 +75,11 @@ export default function MapPage() {
       return;
     }
   }, [user, loading, router]);
+
+  // Load building coordinates when component mounts
+  useEffect(() => {
+    loadBuildingCoordinates();
+  }, []);
 
   // Show loading only while auth is loading
   if (loading) {

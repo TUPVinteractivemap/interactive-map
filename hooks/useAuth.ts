@@ -1,7 +1,9 @@
 'use client';
 
 import { LoginFormData, RegisterFormData } from '@/lib/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { userAuth, googleProvider } from '@/lib/userAuth';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   signInWithEmailAndPassword,
@@ -22,7 +24,7 @@ export interface AuthState {
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 export const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
+  const [authState, setState] = useState<AuthState>({
     user: null,
     loading: true,
     error: null,
@@ -34,10 +36,8 @@ export const useAuth = () => {
   // Auto logout function for inactivity
   const autoLogout = async () => {
     try {
-      await signOut(auth);
-      // Show toast notification for auto logout
+      await signOut(userAuth);
       if (typeof window !== 'undefined') {
-        // Import toast dynamically to avoid SSR issues
         const { toast } = await import('sonner');
         toast.info('You have been logged out due to inactivity');
       }
@@ -70,37 +70,16 @@ export const useAuth = () => {
   useEffect(() => {
     if (authState.user) {
       const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-      
       events.forEach(event => {
         document.addEventListener(event, handleUserActivity, true);
       });
 
-      // Start inactivity timer
       resetInactivityTimer();
-
-      // Handle page visibility change (tab close/minimize)
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          // User switched tabs or minimized window
-          resetInactivityTimer();
-        }
-      };
-
-      // Handle beforeunload (browser close/refresh)
-      const handleBeforeUnload = () => {
-        logout();
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      window.addEventListener('beforeunload', handleBeforeUnload);
 
       return () => {
         events.forEach(event => {
           document.removeEventListener(event, handleUserActivity, true);
         });
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-        
         if (inactivityTimerRef.current) {
           clearTimeout(inactivityTimerRef.current);
         }
@@ -109,106 +88,192 @@ export const useAuth = () => {
   }, [authState.user, handleUserActivity, resetInactivityTimer]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      setAuthState({
-        user,
-        loading: false,
-        error: null,
-      });
+    console.log('Setting up user auth listener...');
+    const unsubscribe = onAuthStateChanged(userAuth, async (user) => {
+      console.log('User auth state changed:', user?.email);
+      try {
+        if (user) {
+          // Update last login time
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, {
+            lastLogin: serverTimestamp()
+          }, { merge: true });
+        }
+        setState({
+          user,
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error('Error in user auth state change:', error);
+        setState({
+          user: null,
+          loading: false,
+          error: 'Authentication error'
+        });
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('Cleaning up user auth listener');
+      unsubscribe();
+    };
   }, []);
+
+  const findUserByStudentId = async (studentId: string) => {
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('studentId', '==', studentId));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        throw new Error('Student ID not found');
+      }
+
+      return querySnapshot.docs[0].data().email;
+    } catch (error) {
+      console.error('Error finding user by student ID:', error);
+      throw new Error('Failed to find user');
+    }
+  };
 
   const signIn = async (data: LoginFormData) => {
     try {
-      setAuthState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }));
+      console.log('Attempting user sign in:', data.email);
+      setState(prev => ({ ...prev, loading: true, error: null }));
 
-      // For now, we'll use email/password authentication
-      // In a real implementation, you might want to validate student ID against a database
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-    } catch (error: any) {
-      setAuthState(prev => ({
-        ...prev,
+      const userCredential = await signInWithEmailAndPassword(
+        userAuth,
+        data.email,
+        data.password
+      );
+
+      // Update last login time
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      await setDoc(userRef, {
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+
+      console.log('User sign in successful:', userCredential.user.email);
+
+      setState({
+        user: userCredential.user,
         loading: false,
-        error: error.message,
-      }));
-      throw new Error(error.message);
+        error: null
+      });
+    } catch (error: any) {
+      console.error('User sign in error:', error);
+      setState({
+        user: null,
+        loading: false,
+        error: error.message
+      });
+      throw error;
     }
   };
 
   const signUp = async (data: RegisterFormData) => {
     try {
-      setAuthState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }));
+      console.log('Attempting user registration:', data.email);
+      setState(prev => ({ ...prev, loading: true, error: null }));
 
       const userCredential = await createUserWithEmailAndPassword(
-        auth,
+        userAuth,
         data.email,
-        data.password,
+        data.password
       );
 
       if (userCredential.user) {
         await updateProfile(userCredential.user, {
-          displayName: `${data.name} (${data.studentId})`,
+          displayName: `${data.name} (${data.studentId})`
         });
-        
-        // In a real implementation, you would store the student ID in Firestore or another database
-        // For now, we'll include it in the display name
+
+        // Create user document in Firestore
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        await setDoc(userRef, {
+          email: data.email,
+          name: data.name,
+          studentId: data.studentId,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+          role: 'student'
+        });
+
+        console.log('User registration successful:', userCredential.user.email);
       }
-    } catch (error: any) {
-      setAuthState(prev => ({
-        ...prev,
+
+      setState({
+        user: userCredential.user,
         loading: false,
-        error: error.message,
-      }));
-      throw new Error(error.message);
+        error: null
+      });
+    } catch (error: any) {
+      console.error('User registration error:', error);
+      setState({
+        user: null,
+        loading: false,
+        error: error.message
+      });
+      throw error;
     }
   };
 
   const signInWithGoogle = async () => {
     try {
-      setAuthState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-      }));
+      console.log('Attempting Google sign in...');
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      
+      const result = await signInWithPopup(userAuth, googleProvider);
 
-      await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      setAuthState(prev => ({
-        ...prev,
+      // Create or update user document in Firestore
+      const userRef = doc(db, 'users', result.user.uid);
+      await setDoc(userRef, {
+        email: result.user.email,
+        name: result.user.displayName,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        role: 'student'
+      }, { merge: true });
+      
+      console.log('Google sign in successful:', result.user.email);
+      
+      setState({
+        user: result.user,
         loading: false,
-        error: error.message,
-      }));
-      throw new Error(error.message);
+        error: null
+      });
+    } catch (error: any) {
+      console.error('Google sign in error:', error);
+      setState({
+        user: null,
+        loading: false,
+        error: error.message
+      });
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
+      console.log('User logging out...');
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
-      await signOut(auth);
-    } catch (error: any) {
-      setAuthState(prev => ({
-        ...prev,
+      await signOut(userAuth);
+      setState({
+        user: null,
         loading: false,
-        error: error.message,
+        error: null
+      });
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      setState(prev => ({
+        ...prev,
+        error: error.message
       }));
-      throw new Error(error.message);
+      throw error;
     }
   };
-
-
 
   return {
     ...authState,

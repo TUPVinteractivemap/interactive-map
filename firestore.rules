@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Buildings collection - public read, admin write
+    match /buildings/{buildingId} {
+      allow read: if true;  // Anyone can read building data
+      allow write: if isAdmin();  // Only admins can write
+    }
+
+    // Users collection - user can read/write their own data, admin can read all
+    match /users/{userId} {
+      allow read: if isAdmin() || request.auth.uid == userId;
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Admins collection - admin access only
+    match /admins/{userId} {
+      allow read: if request.auth != null;  // Any authenticated user can check admin status
+      allow write: if isAdmin();  // Only admins can modify admin collection
+    }
+
+    // Allow admins to read all collections for statistics
+    match /{collection}/{document=**} {
+      allow read: if isAdmin();
+      allow write: if false;  // Default deny write
+    }
+  }
+}

@@ -1,17 +1,10 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  studentId: z
-    .string()
-    .min(1, 'Student ID is required')
-    .regex(/^TUPV-\d{2}-\d{4}$/, 'Student ID must be in format: TUPV-00-0000'),
   email: z
     .string()
     .min(1, 'Email is required')
-    .email('Please enter a valid email address')
-    .refine(email => email.endsWith('@tup.edu.ph'), {
-      message: 'Email must be from tup.edu.ph domain',
-    }),
+    .email('Please enter a valid email address'),
   password: z
     .string()
     .min(1, 'Password is required')
@@ -31,10 +24,7 @@ export const registerSchema = z
     email: z
       .string()
       .min(1, 'Email is required')
-      .email('Please enter a valid email address')
-      .refine(email => email.endsWith('@tup.edu.ph'), {
-        message: 'Email must be from tup.edu.ph domain',
-      }),
+      .email('Please enter a valid email address'),
     password: z
       .string()
       .min(1, 'Password is required')

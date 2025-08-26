@@ -1,36 +1,16 @@
-// Building coordinates (center points of each building)
-export const buildingCoordinates: Record<string, { x: number; y: number }> = {
-  ModernTechnologyBldg: { x: 674.5, y: 658 },
-  GuardHouseMain: { x: 1052.25, y: 713.75 },
-  StudentLounge: { x: 787.5, y: 376.75 },
-  BasketBallCourt: { x: 898, y: 542.5 },
-  GardenWithGazebo: { x: 1058.25, y: 630.5 },
-  Garden: { x: 980.5, y: 488.25 },
-  MultiPurposeHall: { x: 1175.75, y: 221.5 },
-  MechanicalTechnologyBldg: { x: 695, y: 601.75 },
-  AutoRefrigirationAirconTechnologyBldf: { x: 828.25, y: 627.5 },
-  TwoStoreyTrainingInnovationChineseChamberBldg: { x: 967.25, y: 731.75 },
-  EngineeringExtensionBldg: { x: 711.5, y: 371.5 },
-  ElectricalTechnologyBldg: { x: 911.75, y: 454 },
-  EngineeringBldg: { x: 800.25, y: 234.5 },
-  TechnologyBldg: { x: 916.25, y: 128.25 },
-  Laboratories: { x: 875.75, y: 258.75 },
-  TechnologicalInventionInnovationCenter: { x: 1014, y: 196 },
-  TechnologyExtension: { x: 978, y: 118.5 },
-  BldgA5: { x: 944.75, y: 256.75 },
-  EnterpriseCenter: { x: 639.25, y: 760 },
-  Canteen: { x: 989.75, y: 591.5 },
-  TUPVDormitory: { x: 1430.75, y: 318.75 },
-  CampusBusinessCenter: { x: 773, y: 583.5 },
-  StockRoom1: { x: 907.75, y: 676.75 },
-  SupplyOffice: { x: 923.25, y: 646 },
-  FacultyLounge: { x: 957.5, y: 579.75 },
-  Offices: { x: 725.75, y: 483.75 },
-  AdminisitrationBldg: { x: 1060, y: 373 },
-  TrainingCenter: { x: 962.75, y: 811.5 },
-  PPGSOffice: { x: 829, y: 499.5 },
-  PowerHouse: { x: 943, y: 865.25 }
-};
+import { getAllBuildings } from './buildings';
+
+export let buildingCoordinates: Record<string, { x: number; y: number }> = {};
+
+// Load building coordinates from Firestore
+export async function loadBuildingCoordinates() {
+  const buildings = await getAllBuildings();
+  buildingCoordinates = buildings.reduce((acc, building) => {
+    acc[building.id] = building.center;
+    return acc;
+  }, {} as Record<string, { x: number; y: number }>);
+  return buildingCoordinates;
+}
 
 // Building areas to avoid (expanded rectangles around buildings with safety margins)
 export const buildingAreas: Array<{
@@ -401,7 +381,12 @@ function findPathThroughSegments(startPoint: { x: number; y: number }, endPoint:
 }
 
 // Main routing function
-export function findRoute(fromBuilding: string, toBuilding: string): Array<{ x: number; y: number }> {
+export async function findRoute(fromBuilding: string, toBuilding: string): Promise<Array<{ x: number; y: number }>> {
+  // Make sure coordinates are loaded
+  if (Object.keys(buildingCoordinates).length === 0) {
+    await loadBuildingCoordinates();
+  }
+
   const start = buildingCoordinates[fromBuilding];
   const end = buildingCoordinates[toBuilding];
   
