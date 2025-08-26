@@ -31,9 +31,9 @@ export default function AdminLoginPage() {
       await adminSignIn(email, password);
       toast.success('Admin login successful');
       setShouldRedirect(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AdminLogin: Login error:', error);
-      toast.error(error.message || 'Login failed');
+      toast.error(error instanceof Error ? error.message : 'Login failed');
     } finally {
       setIsLoading(false);
     }

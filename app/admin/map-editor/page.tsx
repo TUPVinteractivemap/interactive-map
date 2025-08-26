@@ -11,10 +11,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { adminDb } from '@/lib/adminAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Edit, Trash2, LogOut } from 'lucide-react';
+import { Search, Plus, Edit, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
@@ -68,16 +68,7 @@ export default function MapEditor() {
     building.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleLogout = async () => {
-    try {
-      await adminSignOut();
-      toast.success('Logged out successfully');
-      router.push('/admin/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to logout');
-    }
-  };
+
 
   // Add building
   const handleAddBuilding = async (buildingData: Partial<BuildingInfo>) => {
@@ -97,14 +88,14 @@ export default function MapEditor() {
       }
 
       // Remove id from data since it's used as document ID
-      const { id, ...dataWithoutId } = buildingData;
+      const { id: _id, ...dataWithoutId } = buildingData;
       await setDoc(buildingRef, dataWithoutId);
       
       toast.success('Building added successfully');
       setShowAddDialog(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding building:', error);
-      toast.error(error.message || 'Failed to add building');
+      toast.error(error instanceof Error ? error.message : 'Failed to add building');
     } finally {
       setIsSubmitting(false);
     }

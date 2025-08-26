@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, onSnapshot, query, where, Timestamp, Unsubscribe } from 'firebase/firestore';
+import { collection, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { adminDb } from '@/lib/adminAuth';
 import { Users, MapPin, Clock } from 'lucide-react';
 

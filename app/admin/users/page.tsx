@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Trash2, Mail, Calendar, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { getAuth, deleteUser } from 'firebase/auth';
-import { httpsCallable, getFunctions } from 'firebase/functions';
+
 import {
   Dialog,
   DialogContent,
