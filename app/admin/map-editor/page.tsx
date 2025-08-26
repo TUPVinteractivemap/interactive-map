@@ -88,7 +88,8 @@ export default function MapEditor() {
       }
 
       // Remove id from data since it's used as document ID
-      const { id: _, ...dataWithoutId } = buildingData;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...dataWithoutId } = buildingData;
       await setDoc(buildingRef, dataWithoutId);
       
       toast.success('Building added successfully');
