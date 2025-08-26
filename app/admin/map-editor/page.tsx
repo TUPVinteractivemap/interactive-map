@@ -16,8 +16,8 @@ import { adminDb } from '@/lib/adminAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useRouter } from 'next/navigation';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+// import { useRouter } from 'next/navigation';
+// import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 export default function MapEditor() {
   const [buildings, setBuildings] = useState<BuildingInfo[]>([]);
@@ -29,8 +29,8 @@ export default function MapEditor() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
-  const router = useRouter();
-  const { adminSignOut } = useAdminAuth();
+  // const router = useRouter();
+  // const { adminSignOut } = useAdminAuth();
 
   // Fetch and listen to buildings
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function MapEditor() {
       }
 
       // Remove id from data since it's used as document ID
-      const { id: _id, ...dataWithoutId } = buildingData;
+      const { id, ...dataWithoutId } = buildingData;
       await setDoc(buildingRef, dataWithoutId);
       
       toast.success('Building added successfully');
