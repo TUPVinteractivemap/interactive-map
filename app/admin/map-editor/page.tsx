@@ -88,7 +88,7 @@ export default function MapEditor() {
       }
 
       // Remove id from data since it's used as document ID
-      const { id, ...dataWithoutId } = buildingData;
+      const { id: _, ...dataWithoutId } = buildingData;
       await setDoc(buildingRef, dataWithoutId);
       
       toast.success('Building added successfully');
