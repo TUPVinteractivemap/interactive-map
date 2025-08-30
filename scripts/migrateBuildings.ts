@@ -59,11 +59,9 @@ async function migrateBuildings() {
         name: b.name,
         description: b.description,
         type: b.type,
-        pathData: b.svgPath,
-        center: {
-          x,
-          y,
-        },
+        svgPath: b.svgPath,
+        x,
+        y,
       });
       console.log(`Migrated: ${b.name}`);
     } catch (e) {
