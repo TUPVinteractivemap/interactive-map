@@ -14,6 +14,9 @@ interface InteractiveMapProps {
   showInlineInfo?: boolean;
   activeFloor?: number;
   highlightedBuilding?: string;
+  floorFilter?: 'all' | number;
+  buildingTypeFilter?: 'all' | string;
+  position?: { x: number; y: number };
 }
 
 export default function InteractiveMap({ 
@@ -23,16 +26,14 @@ export default function InteractiveMap({
   onSelectBuilding, 
   showInlineInfo = true,
   activeFloor,
-  highlightedBuilding
+  highlightedBuilding,
+  floorFilter = 'all',
+  buildingTypeFilter = 'all',
+  position = { x: 0, y: 0 }
 }: InteractiveMapProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
-  const [localZoom, setLocalZoom] = useState(zoom);
   const [buildings, setBuildings] = useState<Record<string, BuildingInfo>>({});
   const [loading, setLoading] = useState(true);
 
@@ -54,18 +55,6 @@ export default function InteractiveMap({
 
     loadBuildings();
   }, []);
-
-  // Sync localZoom with prop zoom
-  useEffect(() => {
-    setLocalZoom(zoom);
-  }, [zoom]);
-
-  // Handle mouse wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = -e.deltaY * 0.01;
-    setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + delta)));
-  };
 
   const handleBuildingClick = (buildingId: string) => {
     const building = buildings[buildingId];
@@ -99,94 +88,76 @@ export default function InteractiveMap({
     loadRoute();
   }, [origin, destination]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      // Pinch-to-zoom
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const initialDistance = Math.hypot(
-        touch1.clientX - touch2.clientX,
-        touch1.clientY - touch2.clientY
-      );
-      (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = initialDistance;
-    } else if (e.touches.length === 1) {
-      // Single touch for panning
-      const touch = e.touches[0];
-      setTouchStart({ x: touch.clientX - position.x, y: touch.clientY - position.y });
-      setIsDragging(true);
-    }
-  };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      // Pinch-to-zoom
-      e.preventDefault();
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const currentDistance = Math.hypot(
-        touch1.clientX - touch2.clientX,
-        touch1.clientY - touch2.clientY
-      );
-      const initialDistance = (e.currentTarget as unknown as { initialDistance?: number }).initialDistance;
-      
-      if (initialDistance) {
-        const scale = currentDistance / initialDistance;
-        const zoomDelta = (scale - 1) * 0.3; // Reduced zoom sensitivity
-        setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + zoomDelta)));
-        (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = currentDistance;
-      }
-    } else if (e.touches.length === 1 && touchStart) {
-      // Single touch panning with reduced sensitivity
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStart.x - position.x;
-      const deltaY = touch.clientY - touchStart.y - position.y;
-      
-      // Add dead zone to prevent accidental movements
-      const deadZone = 3; // pixels
-      if (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone) {
-        // Reduce sensitivity by applying a factor
-        const sensitivityFactor = 0.6; // Reduced from 1.0 to 0.6
-        const newX = position.x + (deltaX * sensitivityFactor);
-        const newY = position.y + (deltaY * sensitivityFactor);
-        setPosition({ x: newX, y: newY });
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    setTouchStart(null);
-  };
 
   const getBuildingStyle = (buildingId: string, type: string) => {
     let opacity = 1;
     let color;
+    const building = buildings[buildingId];
+    const buildingFloors = building?.floors || 1;
+
+    // Floor filter logic
+    if (floorFilter !== 'all') {
+      if (buildingFloors !== floorFilter) {
+        opacity = 0.3; // Dim buildings that don't match the filter
+      }
+    }
+
+    // Building type filter logic
+    if (buildingTypeFilter !== 'all') {
+      if (type !== buildingTypeFilter) {
+        opacity = 0.3; // Dim buildings that don't match the filter
+      }
+    }
 
     if (hoveredBuilding === buildingId) {
       color = '#FFD700'; // Gold for hover
     } else {
-      color = (() => {
-        switch (type) {
-          case 'Academic':
-            return '#678DFF';
-          case 'Administrative':
-            return '#FF6D6D';
-          case 'Recreational':
-            return '#FFC76D';
-          case 'Conservation':
-            return '#63FFFF';
-          case 'Multipurpose':
-            return '#1B9C00';
-          case 'IGP':
-            return '#FF946D';
-          case 'Utilities':
-            return '#B163FF';
-          case 'Security':
-            return '#FFFFFF';
+      // Color based on floor count when floor filter is active, otherwise by building type
+      if (floorFilter !== 'all') {
+        // Floor-based coloring
+        switch (buildingFloors) {
+          case 1:
+            color = '#E3F2FD'; // Light blue
+            break;
+          case 2:
+            color = '#2196F3'; // Blue
+            break;
+          case 3:
+            color = '#1976D2'; // Dark blue
+            break;
+          case 4:
+            color = '#0D47A1'; // Very dark blue
+            break;
           default:
-            return '#678DFF';
+            color = '#000051'; // Navy blue for 5+ floors
+            break;
         }
-      })();
+      } else {
+        // Original type-based coloring
+        color = (() => {
+          switch (type) {
+            case 'Academic':
+              return '#678DFF';
+            case 'Administrative':
+              return '#FF6D6D';
+            case 'Recreational':
+              return '#FFC76D';
+            case 'Conservation':
+              return '#63FFFF';
+            case 'Multipurpose':
+              return '#1B9C00';
+            case 'IGP':
+              return '#FF946D';
+            case 'Utilities':
+              return '#B163FF';
+            case 'Security':
+              return '#FFFFFF';
+            default:
+              return '#678DFF';
+          }
+        })();
+      }
     }
 
     // If there's an active floor and this is the highlighted building
@@ -195,7 +166,7 @@ export default function InteractiveMap({
       opacity = 1;
     } else if (activeFloor !== undefined && buildings[buildingId]?.floors > 1) {
       // Reduce opacity for multi-floor buildings when a specific floor is selected
-      opacity = 0.4;
+      opacity = Math.min(opacity, 0.4);
     }
 
     return {
@@ -205,7 +176,7 @@ export default function InteractiveMap({
   };
 
   return (
-    <div className="relative" onWheel={handleWheel}>
+    <div className="relative">
       {/* SVG Map */}
       <svg 
         width="1920" 
@@ -215,29 +186,11 @@ export default function InteractiveMap({
         xmlns="http://www.w3.org/2000/svg"
         className="w-full h-full object-contain"
         style={{
-          transform: `scale(${localZoom}) translate(${position.x}px, ${position.y}px)`,
+          transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
           transformOrigin: 'center',
-          transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
-          cursor: isDragging ? 'grabbing' : 'grab',
-          touchAction: 'none' // Prevent browser handling of touch events
+          transition: 'transform 0.3s ease-in-out',
+          touchAction: 'none'
         }}
-        onMouseDown={(e) => {
-          setIsDragging(true);
-          setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-        }}
-        onMouseMove={(e) => {
-          if (isDragging) {
-            const newX = e.clientX - dragStart.x;
-            const newY = e.clientY - dragStart.y;
-            setPosition({ x: newX, y: newY });
-          }
-        }}
-        onMouseUp={() => setIsDragging(false)}
-        onMouseLeave={() => setIsDragging(false)}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
       >
         <g id="Slide 16:9 - 1">
           {/* Main Road */}

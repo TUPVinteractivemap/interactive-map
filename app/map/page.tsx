@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,19 +31,68 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Room[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [floorFilter, setFloorFilter] = useState<'all' | number>('all');
+  const [buildingTypeFilter, setBuildingTypeFilter] = useState<'all' | string>('all');
+  const [filterPanelMode, setFilterPanelMode] = useState<'type' | 'floors'>('floors');
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const { user, loading, logout } = useAuth();
   const router = useRouter();
 
-  // Handle mouse wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
+  // Map boundary constraints
+  const getMapBounds = () => {
+    const isMobile = window.innerWidth < 768; // md breakpoint
+    const containerWidth = window.innerWidth;
+    const containerHeight = window.innerHeight;
+    
+    // Map dimensions
+    const mapWidth = isMobile ? 1080 : 1920;
+    const mapHeight = isMobile ? 1920 : 1080;
+    
+    // Calculate scaled dimensions
+    const scaledWidth = mapWidth * zoom;
+    const scaledHeight = mapHeight * zoom;
+    
+    // Calculate bounds to keep map within viewport
+    const maxX = Math.max(0, (scaledWidth - containerWidth) / 2);
+    const maxY = Math.max(0, (scaledHeight - containerHeight) / 2);
+    
+    return {
+      minX: -maxX,
+      maxX: maxX,
+      minY: -maxY,
+      maxY: maxY
+    };
+  };
+
+  const constrainPosition = (x: number, y: number) => {
+    const bounds = getMapBounds();
+    return {
+      x: Math.max(bounds.minX, Math.min(bounds.maxX, x)),
+      y: Math.max(bounds.minY, Math.min(bounds.maxY, y))
+    };
+  };
+
+  // Handle mouse wheel zoom with improved smoothness
+  const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
-  };
+    const newZoom = Math.max(0.5, Math.min(3, zoom + delta));
+    setZoom(newZoom);
+    
+    // Apply position constraints with new zoom
+    requestAnimationFrame(() => {
+      const constrainedPos = constrainPosition(mapPosition.x, mapPosition.y);
+      setMapPosition(constrainedPos);
+    });
+  }, [zoom, mapPosition.x, mapPosition.y, constrainPosition]);
 
   // Handle touch gestures for mobile
   const pinchInitialDistance = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
     if (e.touches.length === 2) {
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
@@ -52,10 +101,14 @@ export default function MapPage() {
         touch1.clientY - touch2.clientY
       );
       pinchInitialDistance.current = initialDistance;
+    } else if (e.touches.length === 1) {
+      setIsDragging(true);
+      const touch = e.touches[0];
+      setDragStart({ x: touch.clientX - mapPosition.x, y: touch.clientY - mapPosition.y });
     }
-  };
+  }, [mapPosition.x, mapPosition.y]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       e.preventDefault();
       const touch1 = e.touches[0];
@@ -69,11 +122,56 @@ export default function MapPage() {
       if (initialDistance) {
         const scale = currentDistance / initialDistance;
         const zoomDelta = (scale - 1) * 0.5;
-        setZoom(prev => Math.max(0.5, Math.min(3, prev + zoomDelta)));
+        const newZoom = Math.max(0.5, Math.min(3, zoom + zoomDelta));
+        setZoom(newZoom);
         pinchInitialDistance.current = currentDistance;
+        
+        // Apply position constraints with new zoom
+        const constrainedPos = constrainPosition(mapPosition.x, mapPosition.y);
+        setMapPosition(constrainedPos);
       }
+    } else if (e.touches.length === 1 && isDragging) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const newX = touch.clientX - dragStart.x;
+      const newY = touch.clientY - dragStart.y;
+      
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        const constrainedPos = constrainPosition(newX, newY);
+        setMapPosition(constrainedPos);
+      });
     }
-  };
+  }, [isDragging, dragStart.x, dragStart.y, zoom, constrainPosition, mapPosition.x, mapPosition.y]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Handle mouse drag with improved smoothness
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - mapPosition.x, y: e.clientY - mapPosition.y });
+  }, [mapPosition.x, mapPosition.y]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        const constrainedPos = constrainPosition(newX, newY);
+        setMapPosition(constrainedPos);
+      });
+    }
+  }, [isDragging, dragStart.x, dragStart.y, constrainPosition]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
 
   useEffect(() => {
     // Only redirect if we're not loading and there's no user
@@ -328,6 +426,7 @@ export default function MapPage() {
 
             {/* Sidebar Content */}
             <div className="flex-1 p-6 pt-0">
+
               {/* Search Options */}
               <div className="mb-6">
                 <div className="flex space-x-2">
@@ -768,12 +867,203 @@ export default function MapPage() {
           </button>
         </div>
 
+        {/* Floor Filter Panel */}
+        <div className="absolute top-4 right-4 z-20 mt-[184px]">
+          {/* Filter Toggle Button */}
+          <button
+            onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors mb-2"
+            title="Floor Filter"
+          >
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+          </button>
+
+          {/* Collapsible Filter Panel */}
+          {isFilterPanelOpen && (
+            <div className="bg-white rounded-lg shadow-lg p-4 w-72">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {filterPanelMode === 'type' ? 'Building Types' : 'Floor Levels'}
+                </h3>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setFilterPanelMode('type')}
+                    className={`px-2 py-1 text-xs rounded ${
+                      filterPanelMode === 'type' 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Type
+                  </button>
+                  <button
+                    onClick={() => setFilterPanelMode('floors')}
+                    className={`px-2 py-1 text-xs rounded ${
+                      filterPanelMode === 'floors' 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Floors
+                  </button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                {filterPanelMode === 'type' ? (
+                  // Building type filter
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="buildingTypeFilter" className="block text-sm font-semibold text-gray-800 mb-2">
+                        Filter by Building Type
+                      </label>
+                      <select
+                        id="buildingTypeFilter"
+                        value={buildingTypeFilter}
+                        onChange={(e) => setBuildingTypeFilter(e.target.value)}
+                        className="block w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white shadow-sm transition-all duration-200 hover:border-gray-300 text-gray-700 text-sm"
+                      >
+                        <option value="all">All Building Types</option>
+                        <option value="Academic">Academic</option>
+                        <option value="Administrative">Administrative</option>
+                        <option value="Recreational">Recreational</option>
+                        <option value="Conservation">Conservation</option>
+                        <option value="Multipurpose">Multipurpose</option>
+                        <option value="IGP">IGP</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Security">Security</option>
+                      </select>
+                    </div>
+                    
+                    {/* Building type legend */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-800 mb-2">Building Types</h4>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#678DFF' }}></div>
+                          <span className="text-xs text-gray-600">Academic</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#FF6D6D' }}></div>
+                          <span className="text-xs text-gray-600">Administrative</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#FFC76D' }}></div>
+                          <span className="text-xs text-gray-600">Recreational</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#63FFFF' }}></div>
+                          <span className="text-xs text-gray-600">Conservation</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#1B9C00' }}></div>
+                          <span className="text-xs text-gray-600">Multipurpose</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#FF946D' }}></div>
+                          <span className="text-xs text-gray-600">IGP</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#B163FF' }}></div>
+                          <span className="text-xs text-gray-600">Utilities</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded border border-gray-300" style={{ backgroundColor: '#FFFFFF' }}></div>
+                          <span className="text-xs text-gray-600">Security</span>
+                        </div>
+                        {buildingTypeFilter !== 'all' && (
+                          <div className="text-xs text-gray-400 mt-1 italic">
+                            * Buildings not matching filter are dimmed
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Floor level filter
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="floorFilter" className="block text-sm font-semibold text-gray-800 mb-2">
+                        Filter by Floor Level
+                      </label>
+                      <select
+                        id="floorFilter"
+                        value={floorFilter}
+                        onChange={(e) => setFloorFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                        className="block w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white shadow-sm transition-all duration-200 hover:border-gray-300 text-gray-700 text-sm"
+                      >
+                        <option value="all">All Buildings</option>
+                        <option value="1">1 Floor</option>
+                        <option value="2">2 Floors</option>
+                        <option value="3">3 Floors</option>
+                        <option value="4">4 Floors</option>
+                        <option value="5">5+ Floors</option>
+                      </select>
+                    </div>
+                    
+                    {/* Floor level legend */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-800 mb-2">Floor Levels</h4>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#E3F2FD' }}></div>
+                          <span className="text-xs text-gray-600">1 Floor</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#2196F3' }}></div>
+                          <span className="text-xs text-gray-600">2 Floors</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#1976D2' }}></div>
+                          <span className="text-xs text-gray-600">3 Floors</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#0D47A1' }}></div>
+                          <span className="text-xs text-gray-600">4 Floors</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: '#000051' }}></div>
+                          <span className="text-xs text-gray-600">5+ Floors</span>
+                        </div>
+                        {floorFilter !== 'all' && (
+                          <div className="text-xs text-gray-400 mt-1 italic">
+                            * Buildings not matching filter are dimmed
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Map Container with responsive left margin */}
+        <div className={`relative w-full h-full ${
+          isSidebarOpen 
+            ? (isMainSidebarCollapsed ? 'md:ml-8' : 'md:ml-12') 
+            : ''
+        }`}>
         {/* Map Container */}
         <div 
           className="absolute inset-0 flex items-center justify-center"
+          style={{
+            transform: `translate3d(${mapPosition.x}px, ${mapPosition.y}px, 0)`,
+            cursor: isDragging ? 'grabbing' : 'grab',
+            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+            willChange: isDragging ? 'transform' : 'auto'
+          }}
           onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <InteractiveMap
             zoom={zoom}
@@ -787,7 +1077,11 @@ export default function MapPage() {
             activeFloor={activeFloor}
             highlightedBuilding={selectedRoom?.buildingId || selectedBuilding?.id}
             showInlineInfo={false}
+            floorFilter={floorFilter}
+            buildingTypeFilter={buildingTypeFilter}
+            position={mapPosition}
           />
+        </div>
         </div>
       </div>
 
@@ -799,7 +1093,7 @@ export default function MapPage() {
             <div className="flex justify-between items-center p-4 border-b">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {selectedRoom ? selectedRoom.name : selectedBuilding?.name}
+                  {selectedRoom?.name || selectedBuilding?.name}
                 </h2>
                 {selectedRoom ? (
                   <p className="text-sm text-gray-500">
@@ -828,7 +1122,7 @@ export default function MapPage() {
                 <div>
                   <p className="text-sm text-gray-700 leading-relaxed mb-4">{selectedRoom.description}</p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedRoom.tags.map((tag) => (
+                    {selectedRoom.tags?.map((tag) => (
                       <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                         {tag}
                       </span>
