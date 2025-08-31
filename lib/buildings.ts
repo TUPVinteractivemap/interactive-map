@@ -11,6 +11,7 @@ export interface BuildingInfo {
     x: number;
     y: number;
   };
+  floors: number; // Number of floors in the building
 }
 
 const BUILDINGS_COLLECTION = 'buildings';

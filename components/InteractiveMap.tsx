@@ -12,9 +12,19 @@ interface InteractiveMapProps {
   destination?: string;
   onSelectBuilding?: (building: BuildingInfo) => void;
   showInlineInfo?: boolean;
+  activeFloor?: number;
+  highlightedBuilding?: string;
 }
 
-export default function InteractiveMap({ zoom, origin, destination, onSelectBuilding, showInlineInfo = true }: InteractiveMapProps) {
+export default function InteractiveMap({ 
+  zoom, 
+  origin, 
+  destination, 
+  onSelectBuilding, 
+  showInlineInfo = true,
+  activeFloor,
+  highlightedBuilding
+}: InteractiveMapProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
@@ -148,31 +158,50 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
     setTouchStart(null);
   };
 
-  const getBuildingColor = (buildingId: string, type: string) => {
+  const getBuildingStyle = (buildingId: string, type: string) => {
+    let opacity = 1;
+    let color;
+
     if (hoveredBuilding === buildingId) {
-      return '#FFD700'; // Gold for hover
+      color = '#FFD700'; // Gold for hover
+    } else {
+      color = (() => {
+        switch (type) {
+          case 'Academic':
+            return '#678DFF';
+          case 'Administrative':
+            return '#FF6D6D';
+          case 'Recreational':
+            return '#FFC76D';
+          case 'Conservation':
+            return '#63FFFF';
+          case 'Multipurpose':
+            return '#1B9C00';
+          case 'IGP':
+            return '#FF946D';
+          case 'Utilities':
+            return '#B163FF';
+          case 'Security':
+            return '#FFFFFF';
+          default:
+            return '#678DFF';
+        }
+      })();
     }
-    
-    switch (type) {
-      case 'Academic':
-        return '#678DFF';
-      case 'Administrative':
-        return '#FF6D6D';
-      case 'Recreational':
-        return '#FFC76D';
-      case 'Conservation':
-        return '#63FFFF';
-      case 'Multipurpose':
-        return '#1B9C00';
-      case 'IGP':
-        return '#FF946D';
-      case 'Utilities':
-        return '#B163FF';
-      case 'Security':
-        return '#FFFFFF';
-      default:
-        return '#678DFF';
+
+    // If there's an active floor and this is the highlighted building
+    if (activeFloor !== undefined && highlightedBuilding === buildingId) {
+      color = '#FFD700'; // Highlight color for the active building
+      opacity = 1;
+    } else if (activeFloor !== undefined && buildings[buildingId]?.floors > 1) {
+      // Reduce opacity for multi-floor buildings when a specific floor is selected
+      opacity = 0.4;
     }
+
+    return {
+      fill: color,
+      opacity,
+    };
   };
 
   return (
@@ -247,7 +276,7 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
               key={buildingId}
               id={buildingId}
               d={building.pathData}
-              fill={getBuildingColor(buildingId, building.type)}
+              {...getBuildingStyle(buildingId, building.type)}
               stroke="#1E1E1E"
               strokeWidth={hoveredBuilding === buildingId ? "3" : "1"}
               className="cursor-pointer transition-all duration-200"
@@ -257,13 +286,13 @@ export default function InteractiveMap({ zoom, origin, destination, onSelectBuil
             />
           ))}
 
-          {/* Map Outline / Paths */}
-          {/* Hidden routing path used for navigation */}
+          {/* Hidden routing path used for navigation - invisible */}
           <path 
             id="ROUTING" 
             d="M767.5 522.5L762.881 530.5L685.377 485.753M767.5 522.5L759 517.593L771 496.808L771.755 495.5L732 405M767.5 522.5L774.032 526.318M511.81 722L589.183 587.987M732 405L685.377 485.753M732 405L794.354 297M685.377 485.753L657.5 469.658L589.183 587.987M794.354 297L762.5 278.609L828.5 164.294L876.5 81.1554L994.876 149.5M794.354 297L831 318.158M809 393.632L847.181 327.5L831 318.158M831 318.158L853.833 278.609L818.5 258.209M818.5 258.209L801.3 288M818.5 258.209L842 217.506M994.876 190.428L991.573 188.521M842 217.506L891.944 131L991.573 188.521M842 217.506L964.318 288.127M1017.88 467L1075.91 366.5L1071.49 350L964.318 288.127M1017.88 467L982 446.283L978.699 452M1017.88 467L1037.5 478.326L1015.49 515L1032.59 524.871M947.5 506.039L978.699 452M978.699 452L880.5 395.305M880.5 395.305L928.307 312.5L944.762 322L964.318 288.127M880.5 395.305L842.5 461.123M842.5 461.123L795 490L774.032 526.318M842.5 461.123L870 477M924.65 614.344L967.573 540M924.65 614.344L911 606.367M924.65 614.344L1054 689.941M774.032 526.318L824.498 555.812M870 477L970.459 535L967.573 540M870 477L824.498 555.812M824.498 555.812L911 606.367M967.573 540L1027.33 574.5L1050.13 535M1050.13 535L1095 560.904M1050.13 535L1032.59 524.871M1095 560.904L1135.87 584.5L1141.93 588M1095 560.904L1161.18 446.283L1250.5 291.57L1216.6 272L1182.25 331.5M1182.25 331.5L1023.5 239.844L1008.11 266.5C991.929 258.987 960.04 243.138 961.942 239.844C963.843 236.551 982.488 204.257 991.573 188.521M1182.25 331.5L1100 473.965L1087.94 467L1071.49 457.502L1032.59 524.871M1141.93 588L1327.55 266.5L1348.52 278.609M1141.93 588L1075.83 702.5L1069.5 699L1054 689.941M911 606.367L868.776 679.5L858.5 673.567L844.5 697.816L840.352 705M840.352 705L785.908 673.567L738.161 646M840.352 705L785.908 804L678.5 753M840.352 705L960.73 774.5L922.913 840L935 846.978L920.842 871.5L947.5 886.891L956.386 871.5M738.161 646L726.037 667M738.161 646L751 623.762L726.037 667M726.037 667L589.183 587.987M726.037 667L676.385 753M1054 689.941L1035.2 722.5L1040.5 725.559L956.386 871.249" 
             stroke="transparent" 
             fill="none"
+            style={{ pointerEvents: 'none' }}
           />
 
           {/* Map Outline / Paths */}

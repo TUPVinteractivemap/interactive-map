@@ -1,0 +1,101 @@
+import { db } from './firebase';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import type { BuildingInfo } from './buildings';
+
+export interface Room {
+  id: string;
+  name: string;
+  buildingId: string;
+  floor: number;
+  description?: string;
+  tags: string[];
+}
+
+const ROOMS_COLLECTION = 'rooms';
+const BUILDINGS_COLLECTION = 'buildings';
+
+export async function searchRooms(searchTerm: string): Promise<Room[]> {
+  try {
+    const roomsRef = collection(db, ROOMS_COLLECTION);
+    const snapshot = await getDocs(roomsRef);
+    const rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room));
+    
+    // Search in room names, descriptions, and tags
+    return rooms.filter(room => {
+      const searchString = searchTerm.toLowerCase();
+      return (
+        room.name.toLowerCase().includes(searchString) ||
+        (room.description?.toLowerCase().includes(searchString)) ||
+        room.tags.some(tag => tag.toLowerCase().includes(searchString))
+      );
+    });
+  } catch (error) {
+    console.error('Error searching rooms:', error);
+    throw new Error('Failed to search rooms. Please try again later.');
+  }
+}
+
+export async function getRoomsByBuilding(buildingId: string): Promise<Room[]> {
+  try {
+    const roomsRef = collection(db, ROOMS_COLLECTION);
+    const q = query(roomsRef, where('buildingId', '==', buildingId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room));
+  } catch (error) {
+    console.error('Error fetching rooms:', error);
+    throw new Error('Failed to fetch rooms. Please try again later.');
+  }
+}
+
+export async function getRoomsByFloor(buildingId: string, floor: number): Promise<Room[]> {
+  try {
+    const roomsRef = collection(db, ROOMS_COLLECTION);
+    const q = query(
+      roomsRef,
+      where('buildingId', '==', buildingId),
+      where('floor', '==', floor)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room));
+  } catch (error) {
+    console.error('Error fetching rooms:', error);
+    throw new Error('Failed to fetch rooms. Please try again later.');
+  }
+}
+
+// Get a specific room by ID
+export async function getRoomById(roomId: string): Promise<Room | null> {
+  try {
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      return null;
+    }
+
+    return { id: roomDoc.id, ...roomDoc.data() } as Room;
+  } catch (error) {
+    console.error('Error fetching room:', error);
+    throw new Error('Failed to fetch room. Please try again later.');
+  }
+}
+
+// Get building details for a room
+export async function getBuildingForRoom(roomId: string): Promise<BuildingInfo | null> {
+  try {
+    const room = await getRoomById(roomId);
+    if (!room) return null;
+
+    const buildingRef = doc(db, BUILDINGS_COLLECTION, room.buildingId);
+    const buildingDoc = await getDoc(buildingRef);
+    
+    if (!buildingDoc.exists()) {
+      return null;
+    }
+
+    return { id: buildingDoc.id, ...buildingDoc.data() } as BuildingInfo;
+  } catch (error) {
+    console.error('Error fetching building for room:', error);
+    throw new Error('Failed to fetch building. Please try again later.');
+  }
+}

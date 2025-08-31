@@ -1,22 +1,23 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, writeBatch } from 'firebase/firestore';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+// Read the service account key
+const serviceAccount = JSON.parse(
+  readFileSync(join(process.cwd(), 'firebase-admin-key.json'), 'utf8')
+);
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase Admin
+const app = initializeApp({
+  credential: cert(serviceAccount),
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+}, 'buildings-app');
+
 const db = getFirestore(app);
 
 // Helper function to calculate center point
@@ -49,7 +50,8 @@ const buildingData = {
     description: 'The Modern Technology Building is a new addition to the facilities and buildings of the University. It is located near the exit and has three floors.',
     type: 'Academic',
     pathData: "M607 632.5L730.5 704L742 683L619.5 612L607 632.5Z",
-    center: { x: 674.5, y: 658 }
+    center: { x: 674.5, y: 658 },
+    floors: 3
   },
   GuardHouseMain: {
     id: 'GuardHouseMain',
@@ -145,7 +147,8 @@ const buildingData = {
     description: 'ENGINEERING BUILDING CONSISTS OF ROOMS AND OFFICES FOR ENGINEERING STUDENTS AND FACULTY',
     type: 'Academic',
     pathData: "M769.5 278L831 170L853.5 183L791.5 291L769.5 278Z",
-    center: { x: 800.25, y: 234.5 }
+    center: { x: 800.25, y: 234.5 },
+    floors: 2
   },
   TechnologyBldg: {
     id: 'TechnologyBldg',
@@ -153,7 +156,8 @@ const buildingData = {
     description: 'IT IS A LECTURE BUILDING FOR 1ST YEAR STUDENTS',
     type: 'Academic',
     pathData: "M831 170L880 86L1001.5 156L1007 146.5L1021.5 156L1003.5 186.5L889.5 120.5L853.5 183L831 170Z",
-    center: { x: 916.25, y: 128.25 }
+    center: { x: 916.25, y: 128.25 },
+    floors: 2
   },
   Laboratories: {
     id: 'Laboratories',
@@ -257,7 +261,8 @@ const buildingData = {
     description: 'It serves as the central hub for academic planning, student services, and administrative operations. On the first floor of the building, there you can find classrooms which are used by different year levels.',
     type: 'Administrative',
     pathData: "M997 273L1123 345.746L1049.53 473L1027.5 460.281L1080.49 368.5L1074.39 345.746L984.5 293.846L997 273Z",
-    center: { x: 1060, y: 373 }
+    center: { x: 1060, y: 373 },
+    floors: 2
   },
   TrainingCenter: {
     id: 'TrainingCenter',
@@ -286,12 +291,12 @@ const buildingData = {
 };
 
 async function migrateBuildings() {
-  const batch = writeBatch(db);
-  const buildingsRef = collection(db, 'buildings');
+  const batch = db.batch();
+  const buildingsRef = db.collection('buildings');
 
   Object.values(buildingData).forEach((building) => {
     const { id, ...buildingWithoutId } = building;
-    const docRef = doc(buildingsRef, id);
+    const docRef = buildingsRef.doc(id);
     batch.set(docRef, buildingWithoutId);
   });
 

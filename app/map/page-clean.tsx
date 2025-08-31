@@ -9,7 +9,6 @@ import InteractiveMap from '@/components/InteractiveMap';
 import { RoomSearchPanel } from '@/components/RoomSearchPanel';
 import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
 import type { Room } from '@/lib/rooms';
-import { searchRooms } from '@/lib/rooms';
 import { buildingCoordinates, getBuildingName, loadBuildingCoordinates } from '@/lib/routing';
 
 // Disable static generation/prerendering for this page to avoid server-side
@@ -29,8 +28,6 @@ export default function MapPage() {
   const [buildings, setBuildings] = useState<Record<string, BuildingInfo>>({});
   const [activeTab, setActiveTab] = useState<'room' | 'building' | 'route'>('route');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Room[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
 
@@ -96,38 +93,6 @@ export default function MapPage() {
     };
     loadData();
   }, []);
-
-  // Debounced room search effect
-  useEffect(() => {
-    const searchDebounceTimer = setTimeout(async () => {
-      if (searchQuery.trim() && activeTab === 'room') {
-        setIsSearching(true);
-        try {
-          const results = await searchRooms(searchQuery.trim());
-          setSearchResults(results);
-        } catch (error) {
-          console.error('Room search error:', error);
-          setSearchResults([]);
-        } finally {
-          setIsSearching(false);
-        }
-      } else {
-        setSearchResults([]);
-        setIsSearching(false);
-      }
-    }, 300); // 300ms debounce
-
-    return () => clearTimeout(searchDebounceTimer);
-  }, [searchQuery, activeTab]);
-
-  // Clear search when switching tabs
-  const handleTabChange = (tab: 'room' | 'building' | 'route') => {
-    setActiveTab(tab);
-    if (tab !== 'room') {
-      setSearchQuery('');
-      setSearchResults([]);
-    }
-  };
 
   const handleRoomSelect = (room: Room) => {
     setSelectedRoom(room);
@@ -332,7 +297,7 @@ export default function MapPage() {
               <div className="mb-6">
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => handleTabChange('room')}
+                    onClick={() => setActiveTab('room')}
                     className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'room'
                         ? 'bg-red-500 text-white'
@@ -342,7 +307,7 @@ export default function MapPage() {
                     Find Room
                   </button>
                   <button
-                    onClick={() => handleTabChange('building')}
+                    onClick={() => setActiveTab('building')}
                     className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'building'
                         ? 'bg-red-500 text-white'
@@ -352,7 +317,7 @@ export default function MapPage() {
                     Find Building
                   </button>
                   <button
-                    onClick={() => handleTabChange('route')}
+                    onClick={() => setActiveTab('route')}
                     className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'route'
                         ? 'bg-red-500 text-white'
@@ -379,95 +344,21 @@ export default function MapPage() {
                           id="room"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Enter room number (e.g., 301) or name..."
+                          placeholder="Enter room number (e.g., 301)"
                           className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white shadow-sm transition-all duration-200 hover:border-gray-300 text-gray-700"
                         />
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 mt-8">
-                          {isSearching ? (
-                            <div className="w-5 h-5 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                          )}
+                          <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
                         </div>
                       </div>
-
-                      {/* Search Results */}
-                      {searchQuery.trim() && (
-                        <div className="space-y-2">
-                          {searchResults.length > 0 ? (
-                            <>
-                              <p className="text-sm text-gray-600 font-medium">
-                                Found {searchResults.length} room{searchResults.length !== 1 ? 's' : ''}:
-                              </p>
-                              <div className="max-h-64 overflow-y-auto space-y-2">
-                                {searchResults.map((room) => (
-                                  <button
-                                    key={room.id}
-                                    onClick={() => handleRoomSelect(room)}
-                                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-red-300 transition-colors"
-                                  >
-                                    <div className="font-medium text-gray-900">{room.name}</div>
-                                    <div className="text-sm text-gray-500">
-                                      {buildings[room.buildingId]?.name} - Floor {room.floor}
-                                    </div>
-                                    {room.description && (
-                                      <div className="text-xs text-gray-400 mt-1 line-clamp-2">
-                                        {room.description}
-                                      </div>
-                                    )}
-                                    {room.tags.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-2">
-                                        {room.tags.slice(0, 3).map((tag) => (
-                                          <span key={tag} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                                            {tag}
-                                          </span>
-                                        ))}
-                                        {room.tags.length > 3 && (
-                                          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                                            +{room.tags.length - 3} more
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          ) : !isSearching ? (
-                            <div className="text-center py-8 text-gray-500">
-                              <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <p className="text-sm">No rooms found for "{searchQuery}"</p>
-                              <p className="text-xs text-gray-400 mt-1">Try searching by room number, name, or keywords</p>
-                            </div>
-                          ) : (
-                            <div className="text-center py-8 text-gray-500">
-                              <div className="w-8 h-8 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
-                              <p className="text-sm">Searching...</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Search Tips */}
-                      {!searchQuery.trim() && (
-                        <div className="bg-blue-50 rounded-lg p-3 space-y-2">
-                          <div className="flex items-center gap-2 text-blue-700">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="font-medium text-sm">Search Tips</p>
-                          </div>
-                          <div className="text-xs text-blue-600 space-y-1">
-                            <p>• Type room numbers: "301", "A201", "Lab 1"</p>
-                            <p>• Search by type: "classroom", "laboratory", "office"</p>
-                            <p>• Use partial names: "comp" for "Computer Lab"</p>
-                          </div>
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        className="w-full bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
+                      >
+                        Find Room
+                      </button>
                     </div>
                   )}
 

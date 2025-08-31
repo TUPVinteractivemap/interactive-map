@@ -14,6 +14,12 @@ service cloud.firestore {
       allow write: if isAdmin();  // Only admins can write
     }
 
+    // Rooms collection - public read, admin write
+    match /rooms/{roomId} {
+      allow read: if true;  // Anyone can read room data
+      allow write: if isAdmin();  // Only admins can write
+    }
+
     // Users collection - user can read/write their own data, admin can read all
     match /users/{userId} {
       allow read: if isAdmin() || request.auth.uid == userId;
