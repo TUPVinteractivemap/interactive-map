@@ -45,7 +45,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'The Modern Technology Building is a new addition to the facilities and buildings of the University. It is located near the exit and has three floors.',
     type: 'Academic',
     pathData: buildingPaths.ModernTechnologyBldg,
-    center: calculatePathCenter(buildingPaths.ModernTechnologyBldg)
+    center: calculatePathCenter(buildingPaths.ModernTechnologyBldg),
+    floors: 3
   },
   MechanicalTechnologyBldg: {
     id: 'MechanicalTechnologyBldg',
@@ -53,7 +54,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'The Mechanical Technology Building offers machineries and offices for faculty members and students taking Manufacturing Engineering Technology. Manufacturing Rooms can be found here.',
     type: 'Academic',
     pathData: buildingPaths.MechanicalTechnologyBldg,
-    center: calculatePathCenter(buildingPaths.MechanicalTechnologyBldg)
+    center: calculatePathCenter(buildingPaths.MechanicalTechnologyBldg),
+    floors: 2
   },
   AutoRefrigirationAirconTechnologyBldf: {
     id: 'AutoRefrigirationAirconTechnologyBldf',
@@ -61,7 +63,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'The Automotive & Refrigeration and Air-Condition Technology Building provides HVAR-R rooms for students under their course. Faculty Rooms can also be found here.',
     type: 'Academic',
     pathData: buildingPaths.AutoRefrigirationAirconTechnologyBldf,
-    center: calculatePathCenter(buildingPaths.AutoRefrigirationAirconTechnologyBldf)
+    center: calculatePathCenter(buildingPaths.AutoRefrigirationAirconTechnologyBldf),
+    floors: 2
   },
   TwoStoreyTrainingInnovationChineseChamberBldg: {
     id: 'TwoStoreyTrainingInnovationChineseChamberBldg',
@@ -69,7 +72,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'The Two-Storey Training Innovation & Chinese Chamber Building is a training facility and innovation center. It is located near the main entrance.',
     type: 'Academic',
     pathData: buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg,
-    center: calculatePathCenter(buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg)
+    center: calculatePathCenter(buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg),
+    floors: 2
   },
   EngineeringExtensionBldg: {
     id: 'EngineeringExtensionBldg',
@@ -77,7 +81,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'MECHANICAL ENGINEERING ROOMS WILL BE FOUND IN THIS AREA LABELED AS EEB ROOMS',
     type: 'Academic',
     pathData: buildingPaths.EngineeringExtensionBldg,
-    center: calculatePathCenter(buildingPaths.EngineeringExtensionBldg)
+    center: calculatePathCenter(buildingPaths.EngineeringExtensionBldg),
+    floors: 2
   },
   ElectricalTechnologyBldg: {
     id: 'ElectricalTechnologyBldg',
@@ -85,7 +90,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'ELECTRICAL ENGINEERING TECHNOLOGY BUILDING CONSISTS OF ROOMS AND OFFICES FOR ELECTRICAL TECHNOLOGY STUDENTS AND FACULTY',
     type: 'Academic',
     pathData: buildingPaths.ElectricalTechnologyBldg,
-    center: calculatePathCenter(buildingPaths.ElectricalTechnologyBldg)
+    center: calculatePathCenter(buildingPaths.ElectricalTechnologyBldg),
+    floors: 2
   },
   EngineeringBldg: {
     id: 'EngineeringBldg',
@@ -93,7 +99,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'ENGINEERING BUILDING CONSISTS OF ROOMS AND OFFICES FOR ENGINEERING STUDENTS AND FACULTY',
     type: 'Academic',
     pathData: buildingPaths.EngineeringBldg,
-    center: calculatePathCenter(buildingPaths.EngineeringBldg)
+    center: calculatePathCenter(buildingPaths.EngineeringBldg),
+    floors: 3
   },
   // Conservation Zone
   Garden: {
@@ -102,7 +109,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'Landscaped garden area',
     type: 'Conservation',
     pathData: buildingPaths.Garden,
-    center: calculatePathCenter(buildingPaths.Garden)
+    center: calculatePathCenter(buildingPaths.Garden),
+    floors: 0
   },
   // Multipurpose Activity Zone
   MultiPurposeHall: {
@@ -111,7 +119,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'Multi-purpose event and activity hall',
     type: 'Multipurpose',
     pathData: buildingPaths.MultiPurposeHall,
-    center: calculatePathCenter(buildingPaths.MultiPurposeHall)
+    center: calculatePathCenter(buildingPaths.MultiPurposeHall),
+    floors: 1
   },
   // IGP Facilities
   EnterpriseCenter: {
@@ -120,7 +129,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'Enterprise development and business center',
     type: 'IGP',
     pathData: buildingPaths.EnterpriseCenter,
-    center: calculatePathCenter(buildingPaths.EnterpriseCenter)
+    center: calculatePathCenter(buildingPaths.EnterpriseCenter),
+    floors: 2
   },
   Canteen: {
     id: 'Canteen',
@@ -128,7 +138,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'STUDENTS, FACULTY, VISITORS AND STAFFS OF TUPV CAN PURCHASE THEIR LUNCHES AND SNACKS HERE. ALSO, THE LOCATION HAS TABLES AND CHAIRS WHERE THEY CAN DINE IN. THIS AREA IS NEAR THE ENTRANCE OR MAIN GATE OF TUPV',
     type: 'IGP',
     pathData: buildingPaths.Canteen,
-    center: calculatePathCenter(buildingPaths.Canteen)
+    center: calculatePathCenter(buildingPaths.Canteen),
+    floors: 1
   },
   TUPVDormitory: {
     id: 'TUPVDormitory',
@@ -136,7 +147,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'Student dormitory and housing',
     type: 'IGP',
     pathData: buildingPaths.TUPVDormitory,
-    center: calculatePathCenter(buildingPaths.TUPVDormitory)
+    center: calculatePathCenter(buildingPaths.TUPVDormitory),
+    floors: 3
   },
   // Utilities Zone
   PPGSOffice: {
@@ -145,7 +157,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'OFFICES',
     type: 'Utilities',
     pathData: buildingPaths.PPGSOffice,
-    center: calculatePathCenter(buildingPaths.PPGSOffice)
+    center: calculatePathCenter(buildingPaths.PPGSOffice),
+    floors: 1
   },
   PowerHouse: {
     id: 'PowerHouse',
@@ -153,7 +166,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'Power generation and electrical facilities',
     type: 'Utilities',
     pathData: buildingPaths.PowerHouse,
-    center: calculatePathCenter(buildingPaths.PowerHouse)
+    center: calculatePathCenter(buildingPaths.PowerHouse),
+    floors: 1
   },
   // Security
   GuardHouseMain: {
@@ -162,7 +176,8 @@ const buildingData: Record<string, BuildingInfo> = {
     description: 'THE GUARD HOUSE OF TUPV WHERE CAMPUS\' GUARDS ARE STATIONED',
     type: 'Security',
     pathData: buildingPaths.GuardHouseMain,
-    center: calculatePathCenter(buildingPaths.GuardHouseMain)
+    center: calculatePathCenter(buildingPaths.GuardHouseMain),
+    floors: 1
   }
 };
 
