@@ -1,8 +1,5 @@
-import { useState } from 'react';
 import { Room } from '@/lib/rooms';
 import { BuildingInfo } from '@/lib/buildings';
-import { Dialog } from './ui/dialog';
-import { Button } from './ui/button';
 
 interface RoomInfoProps {
   room: Room;

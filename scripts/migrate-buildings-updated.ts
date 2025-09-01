@@ -1,49 +1,10 @@
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import dotenv from 'dotenv';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-// Load environment variables
-dotenv.config({ path: '.env.local' });
-
-// Read the service account key
-const serviceAccount = JSON.parse(
-  readFileSync(join(process.cwd(), 'firebase-admin-key.json'), 'utf8')
-);
-
-// Initialize Firebase Admin
-const app = initializeApp({
-  credential: cert(serviceAccount),
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-}, 'buildings-app');
-
-const db = getFirestore(app);
-
-// Helper function to calculate center point
-function calculatePathCenter(pathData) {
-  const numbers = pathData.match(/-?\d+\.?\d*/g);
-  if (!numbers) return { x: 0, y: 0 };
-
-  const coordinates = numbers.map(Number);
-  const xCoords = [];
-  const yCoords = [];
-  
-  for (let i = 0; i < coordinates.length; i += 2) {
-    if (i + 1 < coordinates.length) {
-      xCoords.push(coordinates[i]);
-      yCoords.push(coordinates[i + 1]);
-    }
-  }
-
-  const x = xCoords.reduce((a, b) => a + b, 0) / xCoords.length;
-  const y = yCoords.reduce((a, b) => a + b, 0) / yCoords.length;
-
-  return { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) };
-}
+import { db } from '../lib/firebase';
+import { collection, writeBatch, doc } from 'firebase/firestore';
+import { BuildingInfo } from '../lib/buildings';
+import { calculatePathCenter } from '../lib/utils';
 
 // SVG path data extracted from the updated SVG file
-const buildingPaths = {
+const buildingPaths: Record<string, string> = {
   // Academic Zone Buildings
   ModernTechnologyBldg: "M607 632.5L730.5 704L742 683L619.5 612L607 632.5Z",
   MechanicalTechnologyBldg: "M733.5 627.5L610.5 556L600.5 575L722.5 647.5L733.5 627.5ZM779.5 547.5L656.5 476.5L610.5 556L733.5 627.5L779.5 547.5Z",
@@ -108,7 +69,7 @@ const buildingPaths = {
 };
 
 // Building data with descriptions from facilities sheet (converted from caps to proper case)
-const buildingData = {
+const buildingData: Record<string, BuildingInfo> = {
   // Academic Zone
   ModernTechnologyBldg: {
     id: 'ModernTechnologyBldg',
@@ -509,22 +470,22 @@ const buildingData = {
 };
 
 async function migrateBuildings() {
-  const batch = db.batch();
-  const buildingsRef = db.collection('buildings');
+  const batch = writeBatch(db);
+  const buildingsRef = collection(db, 'buildings');
 
   Object.values(buildingData).forEach((building) => {
     const { id, ...buildingWithoutId } = building;
-    const docRef = buildingsRef.doc(id);
+    const docRef = doc(buildingsRef, id);
     batch.set(docRef, buildingWithoutId);
   });
 
   try {
     await batch.commit();
     console.log('Successfully migrated building data to Firestore');
+    console.log(`Migrated ${Object.keys(buildingData).length} buildings`);
   } catch (error) {
     console.error('Error migrating building data:', error);
   }
 }
 
-// Run migration
 migrateBuildings();

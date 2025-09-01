@@ -5,7 +5,6 @@ import { findRoute } from '@/lib/routing';
 import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
 
 
-
 interface InteractiveMapProps {
   zoom: number;
   origin?: string;
@@ -14,9 +13,6 @@ interface InteractiveMapProps {
   showInlineInfo?: boolean;
   activeFloor?: number;
   highlightedBuilding?: string;
-  floorFilter?: 'all' | number;
-  buildingTypeFilter?: 'all' | string;
-  position?: { x: number; y: number };
 }
 
 export default function InteractiveMap({ 
@@ -26,35 +22,63 @@ export default function InteractiveMap({
   onSelectBuilding, 
   showInlineInfo = true,
   activeFloor,
-  highlightedBuilding,
-  floorFilter = 'all',
-  buildingTypeFilter = 'all',
-  position = { x: 0, y: 0 }
+  highlightedBuilding
 }: InteractiveMapProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [localZoom, setLocalZoom] = useState(zoom);
   const [buildings, setBuildings] = useState<Record<string, BuildingInfo>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadBuildings = async () => {
       try {
+        setLoading(true);
+        console.log('Loading buildings...');
+        
+        // Use a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.warn('Building loading timeout');
+          setLoading(false);
+        }, 10000); // 10 second timeout
+
         const buildingsData = await getAllBuildings();
+        clearTimeout(timeoutId);
+        
+        console.log(`Loaded ${buildingsData.length} buildings`);
         const buildingsMap = buildingsData.reduce((acc, building) => {
           acc[building.id] = building;
           return acc;
         }, {} as Record<string, BuildingInfo>);
         setBuildings(buildingsMap);
+        setLoading(false);
       } catch (error) {
         console.error('Error loading buildings:', error);
-      } finally {
         setLoading(false);
+        // Set empty buildings object to prevent infinite loading
+        setBuildings({});
       }
     };
 
     loadBuildings();
   }, []);
+
+  // Sync localZoom with prop zoom
+  useEffect(() => {
+    setLocalZoom(zoom);
+  }, [zoom]);
+
+  // Handle mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = -e.deltaY * 0.01;
+    setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + delta)));
+  };
 
   const handleBuildingClick = (buildingId: string) => {
     const building = buildings[buildingId];
@@ -88,76 +112,98 @@ export default function InteractiveMap({
     loadRoute();
   }, [origin, destination]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch-to-zoom
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const initialDistance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = initialDistance;
+    } else if (e.touches.length === 1) {
+      // Single touch for panning
+      const touch = e.touches[0];
+      setTouchStart({ x: touch.clientX - position.x, y: touch.clientY - position.y });
+      setIsDragging(true);
+    }
+  };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch-to-zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      const initialDistance = (e.currentTarget as unknown as { initialDistance?: number }).initialDistance;
+      
+      if (initialDistance) {
+        const scale = currentDistance / initialDistance;
+        const zoomDelta = (scale - 1) * 0.3; // Reduced zoom sensitivity
+        setLocalZoom(prev => Math.max(0.5, Math.min(5, prev + zoomDelta)));
+        (e.currentTarget as unknown as { initialDistance?: number }).initialDistance = currentDistance;
+      }
+    } else if (e.touches.length === 1 && touchStart) {
+      // Single touch panning with reduced sensitivity
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStart.x - position.x;
+      const deltaY = touch.clientY - touchStart.y - position.y;
+      
+      // Add dead zone to prevent accidental movements
+      const deadZone = 3; // pixels
+      if (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone) {
+        // Reduce sensitivity by applying a factor
+        const sensitivityFactor = 0.6; // Reduced from 1.0 to 0.6
+        const newX = position.x + (deltaX * sensitivityFactor);
+        const newY = position.y + (deltaY * sensitivityFactor);
+        setPosition({ x: newX, y: newY });
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTouchStart(null);
+  };
 
   const getBuildingStyle = (buildingId: string, type: string) => {
     let opacity = 1;
     let color;
-    const building = buildings[buildingId];
-    const buildingFloors = building?.floors || 1;
-
-    // Floor filter logic
-    if (floorFilter !== 'all') {
-      if (buildingFloors !== floorFilter) {
-        opacity = 0.3; // Dim buildings that don't match the filter
-      }
-    }
-
-    // Building type filter logic
-    if (buildingTypeFilter !== 'all') {
-      if (type !== buildingTypeFilter) {
-        opacity = 0.3; // Dim buildings that don't match the filter
-      }
-    }
 
     if (hoveredBuilding === buildingId) {
       color = '#FFD700'; // Gold for hover
     } else {
-      // Color based on floor count when floor filter is active, otherwise by building type
-      if (floorFilter !== 'all') {
-        // Floor-based coloring
-        switch (buildingFloors) {
-          case 1:
-            color = '#E3F2FD'; // Light blue
-            break;
-          case 2:
-            color = '#2196F3'; // Blue
-            break;
-          case 3:
-            color = '#1976D2'; // Dark blue
-            break;
-          case 4:
-            color = '#0D47A1'; // Very dark blue
-            break;
+      color = (() => {
+        switch (type) {
+          case 'Academic':
+            return '#678DFF';
+          case 'Administrative':
+            return '#FF6D6D';
+          case 'Recreational':
+            return '#FFC76D';
+          case 'Conservation':
+            return '#63FFFF';
+          case 'Multipurpose':
+            return '#1B9C00';
+          case 'IGP':
+            return '#FF946D';
+          case 'Utilities':
+            return '#B163FF';
+          case 'Security':
+            return '#FFFFFF';
+          case 'Parking':
+            return '#4A4A4A';
+          case 'Open Space':
+            return '#77E360';
           default:
-            color = '#000051'; // Navy blue for 5+ floors
-            break;
+            return '#678DFF';
         }
-      } else {
-        // Original type-based coloring
-        color = (() => {
-          switch (type) {
-            case 'Academic':
-              return '#678DFF';
-            case 'Administrative':
-              return '#FF6D6D';
-            case 'Recreational':
-              return '#FFC76D';
-            case 'Conservation':
-              return '#63FFFF';
-            case 'Multipurpose':
-              return '#1B9C00';
-            case 'IGP':
-              return '#FF946D';
-            case 'Utilities':
-              return '#B163FF';
-            case 'Security':
-              return '#FFFFFF';
-            default:
-              return '#678DFF';
-          }
-        })();
-      }
+      })();
     }
 
     // If there's an active floor and this is the highlighted building
@@ -166,7 +212,7 @@ export default function InteractiveMap({
       opacity = 1;
     } else if (activeFloor !== undefined && buildings[buildingId]?.floors > 1) {
       // Reduce opacity for multi-floor buildings when a specific floor is selected
-      opacity = Math.min(opacity, 0.4);
+      opacity = 0.4;
     }
 
     return {
@@ -176,7 +222,7 @@ export default function InteractiveMap({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" onWheel={handleWheel}>
       {/* SVG Map */}
       <svg 
         width="1920" 
@@ -186,11 +232,29 @@ export default function InteractiveMap({
         xmlns="http://www.w3.org/2000/svg"
         className="w-full h-full object-contain"
         style={{
-          transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
+          transform: `scale(${localZoom}) translate(${position.x}px, ${position.y}px)`,
           transformOrigin: 'center',
-          transition: 'transform 0.3s ease-in-out',
-          touchAction: 'none'
+          transition: isDragging ? 'none' : 'transform 0.3s ease-in-out',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none' // Prevent browser handling of touch events
         }}
+        onMouseDown={(e) => {
+          setIsDragging(true);
+          setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+        }}
+        onMouseMove={(e) => {
+          if (isDragging) {
+            const newX = e.clientX - dragStart.x;
+            const newY = e.clientY - dragStart.y;
+            setPosition({ x: newX, y: newY });
+          }
+        }}
+        onMouseUp={() => setIsDragging(false)}
+        onMouseLeave={() => setIsDragging(false)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         <g id="Slide 16:9 - 1">
           {/* Main Road */}
@@ -211,8 +275,20 @@ export default function InteractiveMap({
           
           {/* Open Space Zones */}
           <path id="OpenSpace1" d="M598.5 578L513 722L944 914.5L970 868.5L940 851L981.569 779L751.5 646L719.5 650L598.5 578Z" fill="#77E360" stroke="#1E1E1E"/>
-          <path id="OpenSpace3" d="M934.5 81.5L935.5 79.5L1378 163L1160.5 540L1065.5 485L1067 482.402L1049.5 472.5L1122.82 345.5L988.59 268L996.095 255L1056 151.242L934.5 81.5Z" fill="#77E360" stroke="#1E1E1E"/>
+          <path id="OpenSpace3" d="M935.5 79.5L934.5 81.5L1056 151.242L996.095 255L992.342 261.5L1127 339.245L1148 302.872L1043.5 242.538L1049 233.5L1185 312.02L1244 209.829L1108.5 131.598L1112.6 124.5L1196.5 172.941L1206.28 156L1248.5 180.375L1239.48 196L1257 206.116L1253.89 211.5L1268 219.646L1265 224.842L1259.21 221.5L1197 329.254L1159.5 307.604L1060.65 478.811L1067 482.402L1065.5 485L1160.5 540L1378 163L935.5 79.5Z" fill="#77E360" stroke="#1E1E1E"/>
           <path id="OpenSpace2" d="M972 301L1071.5 357.5L1042.5 409L1025.5 398.5L1017 414.5L1033.5 424L1013 459.5L979.5 440.5L976.5 445.5L885 393L922 328L948.5 342.5L972 301Z" fill="#77E360" stroke="#1E1E1E"/>
+          <path id="OpenSpace4" d="M837.086 451.5L782 419.696L783.268 417.5L785.015 414.5L756.436 398L790.5 339L822.156 356.5L836.5 331.656L803.5 312.604L806 308.274L796 302.5L736.5 406L776.5 498L836.5 460.515L839 456.185L840.839 453L838.241 451.5L837.952 452L837.086 451.5Z" fill="#77E360" stroke="#1E1E1E"/>
+          <path id="OpenSpace5" d="M815 273.5L815.054 273.406M815.054 273.406L829.722 248L855 262.594L840.332 288L815.054 273.406ZM732 413L732.034 413.077M732.034 413.077L766 490.5L760 500.892L701 466.829L732.034 413.077ZM893 137.5L991.5 194.369L961.691 246L863 189.021L892.746 137.5L893 137.5Z" fill="#77E360" stroke="#1E1E1E"/>
+          <path id="OpenSpace6" d="M971 773L971.083 772.91M971.083 772.91L977 766.5L1004.42 719L1027 730L1034.5 733L1038.5 726.5L932.845 665.5L895.895 729.5L971.083 772.91Z" fill="#77E360" stroke="#1E1E1E"/>
+
+          {/* Conservation Area Zones */}
+          <path id="GardenWithGazebo" d="M1110.5 627L1035 584L1006.5 635L1081 678L1110.5 627Z" fill="#63FFFF" stroke="#1E1E1E"/>
+          <path id="Garden" d="M982 453.5L987.5 456.5L984 462.5L996.5 470L998.5 466.5L1011.5 474.5L983.5 523L967 513L964 517.5L949.5 509.5L982 453.5Z" fill="#63FFFF" stroke="#1E1E1E"/>
+
+          {/* Parking Spaces */}
+          <path id="ParkingSpace1" d="M798 303.5L802 297L826.672 311.5L855 262.435L895.5 285.818L907.94 293L908.44 292.5L924.028 301.5L837.426 451.5L782 419.5L819 354.707L822.106 356.5L836.5 331.57L803.471 312.5L806 308.119L798 303.5Z" fill="#BAB9B9" stroke="black"/>
+          <path id="ParkingSpace2" d="M1162 526.346L1253.5 367.863L1168 318.5L1166 317.345L1074.5 475.828L1162 526.346Z" fill="#BAB9B9" stroke="black"/>
+          <path id="CoveredParkingSpace" d="M1046 699.5L957.5 650L947 669.5L1034.5 719.5L1046 699.5Z" fill="#BAB9B9" stroke="black"/>
 
           {/* Route Visualization moved later to render above buildings */}
 
@@ -239,18 +315,51 @@ export default function InteractiveMap({
             />
           ))}
 
-          {/* Hidden routing path used for navigation - invisible */}
-          <path 
-            id="ROUTING" 
-            d="M767.5 522.5L762.881 530.5L685.377 485.753M767.5 522.5L759 517.593L771 496.808L771.755 495.5L732 405M767.5 522.5L774.032 526.318M511.81 722L589.183 587.987M732 405L685.377 485.753M732 405L794.354 297M685.377 485.753L657.5 469.658L589.183 587.987M794.354 297L762.5 278.609L828.5 164.294L876.5 81.1554L994.876 149.5M794.354 297L831 318.158M809 393.632L847.181 327.5L831 318.158M831 318.158L853.833 278.609L818.5 258.209M818.5 258.209L801.3 288M818.5 258.209L842 217.506M994.876 190.428L991.573 188.521M842 217.506L891.944 131L991.573 188.521M842 217.506L964.318 288.127M1017.88 467L1075.91 366.5L1071.49 350L964.318 288.127M1017.88 467L982 446.283L978.699 452M1017.88 467L1037.5 478.326L1015.49 515L1032.59 524.871M947.5 506.039L978.699 452M978.699 452L880.5 395.305M880.5 395.305L928.307 312.5L944.762 322L964.318 288.127M880.5 395.305L842.5 461.123M842.5 461.123L795 490L774.032 526.318M842.5 461.123L870 477M924.65 614.344L967.573 540M924.65 614.344L911 606.367M924.65 614.344L1054 689.941M774.032 526.318L824.498 555.812M870 477L970.459 535L967.573 540M870 477L824.498 555.812M824.498 555.812L911 606.367M967.573 540L1027.33 574.5L1050.13 535M1050.13 535L1095 560.904M1050.13 535L1032.59 524.871M1095 560.904L1135.87 584.5L1141.93 588M1095 560.904L1161.18 446.283L1250.5 291.57L1216.6 272L1182.25 331.5M1182.25 331.5L1023.5 239.844L1008.11 266.5C991.929 258.987 960.04 243.138 961.942 239.844C963.843 236.551 982.488 204.257 991.573 188.521M1182.25 331.5L1100 473.965L1087.94 467L1071.49 457.502L1032.59 524.871M1141.93 588L1327.55 266.5L1348.52 278.609M1141.93 588L1075.83 702.5L1069.5 699L1054 689.941M911 606.367L868.776 679.5L858.5 673.567L844.5 697.816L840.352 705M840.352 705L785.908 673.567L738.161 646M840.352 705L785.908 804L678.5 753M840.352 705L960.73 774.5L922.913 840L935 846.978L920.842 871.5L947.5 886.891L956.386 871.5M738.161 646L726.037 667M738.161 646L751 623.762L726.037 667M726.037 667L589.183 587.987M726.037 667L676.385 753M1054 689.941L1035.2 722.5L1040.5 725.559L956.386 871.249" 
-            stroke="transparent" 
-            fill="none"
-            style={{ pointerEvents: 'none' }}
-          />
+          {/* Buildings Layer */}
+          <g id="buildings">
+            {!loading && Object.entries(buildings).map(([buildingId, building]) => (
+              <path
+                key={buildingId}
+                id={buildingId}
+                d={building.pathData}
+                {...getBuildingStyle(buildingId, building.type)}
+                stroke="#1E1E1E"
+                strokeWidth={hoveredBuilding === buildingId ? "3" : "1"}
+                className="cursor-pointer transition-all duration-200"
+                onClick={() => handleBuildingClick(buildingId)}
+                onMouseEnter={() => handleBuildingHover(buildingId)}
+                onMouseLeave={handleBuildingLeave}
+              />
+            ))}
+          </g>
+
+          {/* Hidden routing path used for navigation - rendered above buildings */}
+          <g id="routing-layer" style={{ pointerEvents: 'none' }}>
+            <path 
+              id="ROUTING" 
+              d="M256.5 442.5L251.881 450.5L174.377 405.753M256.5 442.5L248 437.593L260.755 415.5L221 325M256.5 442.5L263.032 446.318M221 325L174.377 405.753M221 325L283.354 217M174.377 405.753L146.5 389.658L78.1827 507.987M283.354 217L251.5 198.609L280 149.246L294.25 124.564M283.354 217L320 238.158M298 313.632L336.181 247.5L320 238.158M320 238.158L342.833 198.609L307.5 178.209M307.5 178.209L290.301 208M307.5 178.209L331 137.506M331 137.506L380.944 51L480.574 108.521M331 137.506L377.364 164.274M506.883 387L564.907 286.5L560.486 270L453.319 208.127M506.883 387L471 366.283L467.699 372M506.883 387L526.5 398.326L504.493 435L521.59 444.871M467.699 372L436.5 426.039M467.699 372L369.5 315.305M369.5 315.305L417.307 232.5L433.762 242L453.319 208.127M369.5 315.305L331.5 381.123M453.319 208.127L377.364 164.274M331.5 381.123L284 410L263.032 446.318M331.5 381.123L359 397M263.032 446.318L313.498 475.812M359 397L459.459 455L456.573 460M359 397L313.498 475.812M313.498 475.812L400 526.367M456.573 460L413.65 534.344M456.573 460L516.328 494.5M413.65 534.344L400 526.367M413.65 534.344L513 592.408M516.328 494.5L539.134 455M516.328 494.5L523.5 496.588M539.134 455L584 480.904M539.134 455L521.59 444.871M480.574 108.521L483.876 110.428L480.574 122.5L453.319 169.707M480.574 108.521L498.483 77.5L483.876 69.5L365.5 1.1554L351.25 25.8371L344.125 38.178M589 393.965L557.5 374.5M557.5 374.5L521.59 444.871M557.5 374.5L618.5 265.075M837.524 198.609L816.551 186.5L630.932 508L564.826 622.5L558.5 619L543 609.941M400 526.367L387.5 548.017M329.352 625L274.908 724L198.274 687.581M329.352 625L449.73 694.5L411.913 760L424 766.978L409.842 791.5L436.5 806.891L445.386 791.5M329.352 625L347.5 593.567L357.777 599.5L369.612 579M329.352 625L227.161 566M227.161 566L215.037 587M227.161 566L240 543.762M215.037 587L78.1827 507.987M215.037 587L248 607L206.692 673L198.274 687.581M78.1827 507.987L0.810364 642M198.274 687.581L71.5001 628M543 609.941L524.202 642.5M543 609.941L513 592.408M524.202 642.5L529.5 645.559L445.386 791.249M524.202 642.5L501.977 611.5L513 592.408M584.5 481L562.5 519.105L523.5 496.588M523.5 496.588L479.384 573M387.5 659L423 597.512L521 650L505.363 677M469.5 738.923L505.363 677M369.612 579L383 586.729M369.612 579L387.5 548.017M387.5 548.017L400 555.234M453.319 169.707L618.5 265.075M453.319 169.707L394 135.459L377.364 164.274M618.5 265.075L643.08 222.5M643.08 222.5L542 164.141M643.08 222.5L682 241L710.723 191.25M607.23 51.5L706.5 108.813M706.5 108.813L738 127L738.723 134.25M706.5 108.813L714 95.8231M738.723 134.25L739.446 141.5L710.723 191.25M738.723 134.25L770.5 149.5L776.5 137M710.723 191.25L756.19 217.5M505.363 677L503 675.5" 
+              stroke="transparent" 
+              fill="none"
+              style={{ pointerEvents: 'none' }}
+            />
+            {currentRoute.length > 1 && (
+              <>
+                <path
+                  d={`M ${currentRoute.map(point => `${point.x} ${point.y}`).join(' L ')}`}
+                  stroke="#FF6B35"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeDasharray="10,5"
+                  style={{ filter: 'drop-shadow(0px 0px 4px rgba(255,255,255,0.8))' }}
+                />
+                <circle cx={currentRoute[0].x} cy={currentRoute[0].y} r="9" fill="#4CAF50" stroke="#FFFFFF" strokeWidth="2" />
+                <circle cx={currentRoute[currentRoute.length - 1].x} cy={currentRoute[currentRoute.length - 1].y} r="9" fill="#F44336" stroke="#FFFFFF" strokeWidth="2" />
+              </>
+            )}
+          </g>
 
           {/* Map Outline / Paths */}
           <path id="Vector 21" d="M895.5 729.5L932.5 665.414L1038.5 726.613L961.778 859.5L942 848.081L940.315 851L962.832 864L1043 725.144L1037.55 722L1049.39 701.5L1046 699.543L1034.19 720L946.5 669.373L957.685 650L939.498 639.5" stroke="#1E1E1E"/>
-          <path id="Vector 20" d="M885 691L906.651 703.5L894.238 725L872.5 712.45L884.884 691M862.5 678L850.087 699.5L870.872 711.5L883.285 690L862.5 678Z" stroke="#1E1E1E"/>
           <path id="Vector 19" d="M856 670.5L864 675.119L868.687 667M887 688.5L879 683.881L884.059 675.119" stroke="#1E1E1E"/>
           <path id="Vector 18" d="M698.5 453L684.355 477.5L658.5 462.573L509.297 721" stroke="#1E1E1E"/>
           <path id="Vector 17" d="M700.5 467L731.966 412.5L766 490.5L759.938 501" stroke="#1E1E1E"/>

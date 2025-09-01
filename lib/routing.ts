@@ -21,7 +21,7 @@ export const buildingAreas: Array<{
   { id: 'ModernTechnologyBldg', x1: 590, y1: 595, x2: 760, y2: 720 },
   { id: 'MechanicalTechnologyBldg', x1: 580, y1: 460, x2: 800, y2: 660 },
   { id: 'AutoRefrigirationAirconTechnologyBldf', x1: 735, y1: 545, x2: 905, y2: 710 },
-  { id: 'TwoStoreyTrainingInnovationChineseChamberBldg', x1: 895, y1: 670, x2: 1040, y2: 795 },
+  { id: 'LamoiyanBldg', x1: 960, y1: 705, x2: 1045, y2: 795 },
   { id: 'EngineeringExtensionBldg', x1: 650, y1: 275, x2: 800, y2: 470 },
   { id: 'ElectricalTechnologyBldg', x1: 830, y1: 385, x2: 990, y2: 525 },
   { id: 'EngineeringBldg', x1: 750, y1: 155, x2: 870, y2: 305 },
@@ -30,6 +30,7 @@ export const buildingAreas: Array<{
   { id: 'TechnologicalInventionInnovationCenter', x1: 955, y1: 125, x2: 1075, y2: 270 },
   { id: 'TechnologyExtension', x1: 905, y1: 65, x2: 1050, y2: 170 },
   { id: 'BldgA5', x1: 875, y1: 205, x2: 1015, y2: 310 },
+  { id: 'EngineeringAnnexBldg', x1: 780, y1: 100, x2: 870, y2: 210 },
 
   // Administrative Zone
   { id: 'CampusBusinessCenter', x1: 725, y1: 530, x2: 820, y2: 635 },
@@ -39,17 +40,21 @@ export const buildingAreas: Array<{
   { id: 'Offices', x1: 675, y1: 450, x2: 775, y2: 530 },
   { id: 'AdminisitrationBldg', x1: 965, y1: 260, x2: 1140, y2: 490 },
   { id: 'TrainingCenter', x1: 915, y1: 755, x2: 1010, y2: 865 },
+  { id: 'InnovationCenter', x1: 835, y1: 665, x2: 920, y2: 740 },
 
   // Recreational Zone
   { id: 'StudentLounge', x1: 740, y1: 325, x2: 835, y2: 430 },
-  { id: 'BasketBallCourt', x1: 845, y1: 510, x2: 950, y2: 580 },
+  { id: 'BasketBallCourt', x1: 820, y1: 475, x2: 975, y2: 615 },
+  { id: 'SmallCanteen', x1: 1190, y1: 125, x2: 1275, y2: 195 },
+  { id: 'StudentCenter', x1: 1230, y1: 135, x2: 1340, y2: 285 },
 
   // Conservation Area
   { id: 'GardenWithGazebo', x1: 990, y1: 570, x2: 1125, y2: 695 },
   { id: 'Garden', x1: 930, y1: 440, x2: 1030, y2: 540 },
 
-  // Multipurpose
-  { id: 'MultiPurposeHall', x1: 1030, y1: 115, x2: 1260, y2: 330 },
+  // Multipurpose Activity Zone
+  { id: 'TUPVGymnasium', x1: 1030, y1: 115, x2: 1260, y2: 330 },
+  { id: 'USGCanopy', x1: 1240, y1: 260, x2: 1320, y2: 360 },
 
   // IGP Facilities
   { id: 'EnterpriseCenter', x1: 515, y1: 685, x2: 755, y2: 835 },
@@ -59,9 +64,15 @@ export const buildingAreas: Array<{
   // Utilities
   { id: 'PPGSOffice', x1: 785, y1: 460, x2: 870, y2: 540 },
   { id: 'PowerHouse', x1: 910, y1: 835, x2: 975, y2: 895 },
+  { id: 'SmartTower', x1: 1055, y1: 95, x2: 1115, y2: 155 },
 
   // Security
-  { id: 'GuardHouseMain', x1: 1025, y1: 685, x2: 1080, y2: 740 }
+  { id: 'GuardHouseMain', x1: 1025, y1: 685, x2: 1080, y2: 740 },
+
+  // Parking Areas
+  { id: 'ParkingSpace1', x1: 765, y1: 280, x2: 940, y2: 470 },
+  { id: 'ParkingSpace2', x1: 1055, y1: 300, x2: 1270, y2: 545 },
+  { id: 'CoveredParkingSpace', x1: 930, y1: 635, x2: 1065, y2: 735 },
 ];
 
 // Point-in-building helper is not needed for ROUTING-only navigation; removed for clean build
@@ -79,8 +90,8 @@ interface PathSegment {
   end: { x: number; y: number };
 }
 
-// Parse the SVG path data into actual segments
-const routingPathData = "M767.5 522.5L762.881 530.5L685.377 485.753M767.5 522.5L759 517.593L771.755 495.5L732 405M767.5 522.5L774.032 526.318M732 405L685.377 485.753M732 405L794.354 297M685.377 485.753L657.5 469.658L589.183 587.987M794.354 297L762.5 278.609L876.5 81.1554L994.876 149.5M794.354 297L831 318.158M809 393.632L847.181 327.5L831 318.158M831 318.158L853.833 278.609L818.5 258.209M818.5 258.209L801.3 288M818.5 258.209L842 217.506M842 217.506L891.944 131L991.573 188.521M842 217.506L964.318 288.127M1017.88 467L1075.91 366.5L1071.49 350L964.318 288.127M1017.88 467L982 446.283L978.699 452M1017.88 467L1037.5 478.326L1015.49 515L1032.59 524.871M978.699 452L947.5 506.039M978.699 452L880.5 395.305M880.5 395.305L928.307 312.5L944.762 322L964.318 288.127M880.5 395.305L842.5 461.123M842.5 461.123L795 490L774.032 526.318M842.5 461.123L870 477M774.032 526.318L824.498 555.812M870 477L970.459 535L967.573 540M870 477L824.498 555.812M824.498 555.812L911 606.367M967.573 540L924.65 614.344M967.573 540L1027.33 574.5L1050.13 535M924.65 614.344L911 606.367M924.65 614.344L1054 689.941M1050.13 535L1095 560.904M1050.13 535L1032.59 524.871M1095 560.904L1141.93 588M1095 560.904L1250.5 291.57L1216.6 272L1182.25 331.5M1182.25 331.5L1023.5 239.844L1008.11 266.5C991.929 258.987 960.04 243.138 961.942 239.844L991.573 188.521M1182.25 331.5L1100 473.965L1071.49 457.502L1032.59 524.871M991.573 188.521L994.876 190.428M1141.93 588L1327.55 266.5L1348.52 278.609M1141.93 588L1075.83 702.5L1069.5 699L1054 689.941M911 606.367L868.776 679.5L858.5 673.567L840.352 705M840.352 705L785.908 804L678.5 753M840.352 705L960.73 774.5L922.913 840L935 846.978L920.842 871.5L947.5 886.891L956.386 871.5M840.352 705L738.161 646M738.161 646L726.037 667M738.161 646L751 623.762M726.037 667L589.183 587.987M726.037 667L676.385 753M589.183 587.987L511.81 722M1054 689.941L1035.2 722.5L1040.5 725.559L956.386 871.249M1095.5 561L1073.5 599.105L1034.5 576.588L990.384 653M898.5 739L934 677.512L1030.11 733L980.5 818.923";
+// Parse the SVG path data into actual segments - Updated routing path from new SVG
+const routingPathData = "M767.5 522.5L762.881 530.5L685.377 485.753M767.5 522.5L759 517.593L771.755 495.5L732 405M767.5 522.5L774.032 526.318M732 405L685.377 485.753M732 405L794.354 297M685.377 485.753L657.5 469.658L589.183 587.987M794.354 297L762.5 278.609L791 229.246L805.25 204.564M794.354 297L831 318.158M809 393.632L847.181 327.5L831 318.158M831 318.158L853.833 278.609L818.5 258.209M818.5 258.209L801.301 288M818.5 258.209L842 217.506M842 217.506L891.944 131L991.574 188.521M842 217.506L888.364 244.274M1017.88 467L1075.91 366.5L1071.49 350L964.319 288.127M1017.88 467L982 446.283L978.699 452M1017.88 467L1037.5 478.326L1015.49 515L1032.59 524.871M978.699 452L947.5 506.039M978.699 452L880.5 395.305M880.5 395.305L928.307 312.5L944.762 322L964.319 288.127M880.5 395.305L842.5 461.123M964.319 288.127L888.364 244.274M842.5 461.123L795 490L774.032 526.318M842.5 461.123L870 477M774.032 526.318L824.498 555.812M870 477L970.459 535L967.573 540M870 477L824.498 555.812M824.498 555.812L911 606.367M967.573 540L924.65 614.344M967.573 540L1027.33 574.5M924.65 614.344L911 606.367M924.65 614.344L1024 672.408M1027.33 574.5L1050.13 535M1027.33 574.5L1034.5 576.588M1050.13 535L1095 560.904M1050.13 535L1032.59 524.871M991.574 188.521L994.876 190.428L991.574 202.5L964.319 249.707M991.574 188.521L1009.48 157.5L994.876 149.5L876.5 81.1554L862.25 105.837L855.125 118.178M1100 473.965L1068.5 454.5M1068.5 454.5L1032.59 524.871M1068.5 454.5L1129.5 345.075M1348.52 278.609L1327.55 266.5L1141.93 588L1075.83 702.5L1069.5 699L1054 689.941M911 606.367L898.5 628.017M840.352 705L785.908 804L709.274 767.581M840.352 705L960.73 774.5L922.913 840L935 846.978L920.842 871.5L947.5 886.891L956.386 871.5M840.352 705L858.5 673.567L868.777 679.5L880.612 659M840.352 705L738.161 646M738.161 646L726.037 667M738.161 646L751 623.762M726.037 667L589.183 587.987M726.037 667L759 687L717.692 753L709.274 767.581M589.183 587.987L511.81 722M709.274 767.581L582.5 708M1054 689.941L1035.2 722.5M1054 689.941L1024 672.408M1035.2 722.5L1040.5 725.559L956.386 871.249M1035.2 722.5L1012.98 691.5L1024 672.408M1095.5 561L1073.5 599.105L1034.5 576.588M1034.5 576.588L990.384 653M898.5 739L934 677.512L1032 730L1016.36 757M980.5 818.923L1016.36 757M880.612 659L894 666.729M880.612 659L898.5 628.017M898.5 628.017L911 635.234M964.319 249.707L1129.5 345.075M964.319 249.707L905 215.459L888.364 244.274M1129.5 345.075L1154.08 302.5M1154.08 302.5L1053 244.141M1154.08 302.5L1193 321L1221.72 271.25M1118.23 131.5L1217.5 188.813M1217.5 188.813L1249 207L1249.72 214.25M1217.5 188.813L1225 175.823M1249.72 214.25L1250.45 221.5L1221.72 271.25M1249.72 214.25L1281.5 229.5L1287.5 217M1221.72 271.25L1267.19 297.5M1016.36 757L1014 755.5M732 405L698.5 453.5M698.5 453.5L669 435.5M976.5 766.662L934 677.512M1000 730L976.5 766.662L1027 730";
 
 // Parse the path data into segments
 function parsePathData(pathData: string): PathSegment[] {
@@ -406,16 +417,11 @@ export async function findRoute(fromBuilding: string, toBuilding: string): Promi
 // Get building name by ID
 export function getBuildingName(buildingId: string): string {
   const buildingNames: Record<string, string> = {
+    // Academic Zone
     ModernTechnologyBldg: 'Modern Technology Building',
-    GuardHouseMain: 'Main Guard House',
-    StudentLounge: 'Student Lounge',
-    BasketBallCourt: 'Basketball Court',
-    GardenWithGazebo: 'Garden with Gazebo',
-    Garden: 'Garden',
-    MultiPurposeHall: 'Multi-Purpose Hall',
     MechanicalTechnologyBldg: 'Mechanical Technology Building',
-    AutoRefrigirationAirconTechnologyBldf: 'Auto Refrigeration & Air Conditioning Technology Building',
-    TwoStoreyTrainingInnovationChineseChamberBldg: 'Two-Storey Training Innovation & Chinese Chamber Building',
+    AutoRefrigirationAirconTechnologyBldf: 'Automotive & Refrigeration and Air-Condition Technology Building',
+    LamoiyanBldg: 'Lamoiyan Building',
     EngineeringExtensionBldg: 'Engineering Extension Building',
     ElectricalTechnologyBldg: 'Electrical Technology Building',
     EngineeringBldg: 'Engineering Building',
@@ -424,18 +430,54 @@ export function getBuildingName(buildingId: string): string {
     TechnologicalInventionInnovationCenter: 'Technological Invention & Innovation Center',
     TechnologyExtension: 'Technology Extension',
     BldgA5: 'Building A5',
+    EngineeringAnnexBldg: 'Engineering Annex Building',
+
+    // Recreational Zone
+    StudentLounge: 'Student Lounge',
+    BasketBallCourt: 'Basketball Court',
+    SmallCanteen: 'Small Canteen',
+    StudentCenter: 'Student Center',
+
+    // Conservation Area
+    GardenWithGazebo: 'Garden with Gazebo',
+    Garden: 'Garden',
+
+    // Multipurpose Activity Zone
+    TUPVGymnasium: 'TUPV Gymnasium',
+    USGCanopy: 'USG Canopy Lounges',
+
+    // IGP Facilities
     EnterpriseCenter: 'Enterprise Center',
     Canteen: 'Canteen',
     TUPVDormitory: 'TUPV Dormitory',
+
+    // Administrative Zone
     CampusBusinessCenter: 'Campus Business Center',
-    StockRoom1: 'Stock Room 1',
     SupplyOffice: 'Supply Office',
     FacultyLounge: 'Faculty Lounge',
     Offices: 'Offices',
     AdminisitrationBldg: 'Administration Building',
     TrainingCenter: 'Training Center',
+    InnovationCenter: 'Innovation Center',
+    StockRoom1: 'Stock Room',
+
+    // Utilities Zone
     PPGSOffice: 'PPGS Office',
-    PowerHouse: 'Power House'
+    PowerHouse: 'Power House',
+    SmartTower: 'Smart Tower',
+
+    // Security
+    GuardHouseMain: 'Guard House',
+
+    // Parking Areas
+    ParkingSpace1: 'Parking Space 1',
+    ParkingSpace2: 'Parking Area',
+    CoveredParkingSpace: 'Covered Parking Space',
+
+    // Open Spaces
+    OpenSpace1: 'Open Space 1',
+    OpenSpace2: 'Open Space 2',
+    OpenSpace3: 'Open Space 3'
   };
   
   return buildingNames[buildingId] || buildingId;

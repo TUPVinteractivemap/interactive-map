@@ -5,7 +5,6 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { searchRooms } from '@/lib/rooms';
 import type { Room } from '@/lib/rooms';
-import { Dialog } from './ui/dialog';
 import { Label } from './ui/label';
 import { getAllBuildings, type BuildingInfo } from '@/lib/buildings';
 
@@ -74,7 +73,7 @@ export function RoomSearchPanel({ onRoomSelect }: RoomSearchPanelProps) {
             disabled={isLoading}
             className="min-w-[80px]"
           >
-            {isLoading ? 'Searching...' : 'Search'}
+            {isLoading ? 'Searching&hellip;' : 'Search'}
           </Button>
         </div>
       </div>
@@ -91,7 +90,7 @@ export function RoomSearchPanel({ onRoomSelect }: RoomSearchPanelProps) {
               >
                 <h3 className="font-medium text-gray-900">{room.name}</h3>
                 <p className="text-sm text-gray-500">
-                  Located in {buildings[room.buildingId]?.name || 'Loading...'}
+                  Located in {buildings[room.buildingId]?.name || 'Loading&hellip;'}
                 </p>
                 <p className="text-sm text-gray-500">Floor {room.floor}</p>
                 {room.description && (
