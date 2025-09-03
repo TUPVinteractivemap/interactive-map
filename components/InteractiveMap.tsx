@@ -13,16 +13,18 @@ interface InteractiveMapProps {
   showInlineInfo?: boolean;
   activeFloor?: number;
   highlightedBuilding?: string;
+  selectedFloorLevel?: number | 'all';
 }
 
-export default function InteractiveMap({ 
-  zoom, 
-  origin, 
-  destination, 
-  onSelectBuilding, 
+export default function InteractiveMap({
+  zoom,
+  origin,
+  destination,
+  onSelectBuilding,
   showInlineInfo = true,
   activeFloor,
-  highlightedBuilding
+  highlightedBuilding,
+  selectedFloorLevel = 'all'
 }: InteractiveMapProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
@@ -171,46 +173,91 @@ export default function InteractiveMap({
     setTouchStart(null);
   };
 
+
+
   const getBuildingStyle = (buildingId: string, type: string) => {
     let opacity = 1;
     let color;
+    const building = buildings[buildingId];
 
-    if (hoveredBuilding === buildingId) {
-      color = '#FFD700'; // Gold for hover
-    } else {
-      color = (() => {
-        switch (type) {
-          case 'Academic':
-            return '#678DFF';
-          case 'Administrative':
-            return '#FF6D6D';
-          case 'Recreational':
-            return '#FFC76D';
-          case 'Conservation':
-            return '#63FFFF';
-          case 'Multipurpose':
-            return '#1B9C00';
-          case 'IGP':
-            return '#FF946D';
-          case 'Utilities':
-            return '#B163FF';
-          case 'Security':
-            return '#FFFFFF';
-          case 'Parking':
-            return '#4A4A4A';
-          case 'Open Space':
-            return '#77E360';
-          default:
-            return '#678DFF';
+    // Floor level filtering logic
+    if (selectedFloorLevel !== 'all' && building) {
+      // If a specific floor level is selected, check if building has that level
+      if (building.floors < selectedFloorLevel) {
+        // Building doesn't have the selected floor level, show in gray
+        color = '#D3D3D3'; // Light gray for non-matching buildings
+      } else {
+        // Building has the selected floor level, show normal color
+        if (hoveredBuilding === buildingId) {
+          color = '#FFD700'; // Gold for hover
+        } else {
+          color = (() => {
+            switch (type) {
+              case 'Academic':
+                return '#678DFF';
+              case 'Administrative':
+                return '#FF6D6D';
+              case 'Recreational':
+                return '#FFC76D';
+              case 'Conservation':
+                return '#63FFFF';
+              case 'Multipurpose':
+                return '#1B9C00';
+              case 'IGP':
+                return '#FF946D';
+              case 'Utilities':
+                return '#B163FF';
+              case 'Security':
+                return '#FFFFFF';
+              case 'Parking':
+                return '#4A4A4A';
+              case 'Open Space':
+                return '#77E360'; // Always green for Open Space buildings
+              default:
+                return '#678DFF';
+            }
+          })();
         }
-      })();
+      }
+    } else {
+      // No floor filter selected, show normal colors
+      if (hoveredBuilding === buildingId) {
+        color = '#FFD700'; // Gold for hover
+      } else {
+        color = (() => {
+          switch (type) {
+            case 'Academic':
+              return '#678DFF';
+            case 'Administrative':
+              return '#FF6D6D';
+            case 'Recreational':
+              return '#FFC76D';
+            case 'Conservation':
+              return '#63FFFF';
+            case 'Multipurpose':
+              return '#1B9C00';
+            case 'IGP':
+              return '#FF946D';
+            case 'Utilities':
+              return '#B163FF';
+            case 'Security':
+              return '#FFFFFF';
+            case 'Parking':
+              return '#4A4A4A';
+            case 'Open Space':
+              return '#77E360';
+            default:
+              return '#678DFF';
+          }
+        })();
+      }
     }
 
     // If there's an active floor and this is the highlighted building
     if (activeFloor !== undefined && highlightedBuilding === buildingId) {
       color = '#FFD700'; // Highlight color for the active building
       opacity = 1;
-    } else if (activeFloor !== undefined && buildings[buildingId]?.floors > 1) {
+    } else if (activeFloor !== undefined && building?.floors > 1) {
       // Reduce opacity for multi-floor buildings when a specific floor is selected
       opacity = 0.4;
     }
@@ -221,8 +268,27 @@ export default function InteractiveMap({
     };
   };
 
+  // Get style for open spaces (areas that are not buildings)
+  const getOpenSpaceStyle = () => {
+    // When a floor level is selected, show open spaces in gray
+    if (selectedFloorLevel !== 'all') {
+      return {
+        fill: '#D3D3D3', // Light gray for open spaces when floor filter is active
+        opacity: 1,
+      };
+    }
+    // Default green color for open spaces
+    return {
+      fill: '#77E360',
+      opacity: 1,
+    };
+  };
+
+
+
   return (
     <div className="relative" onWheel={handleWheel}>
+
       {/* SVG Map */}
       <svg 
         width="1920" 
@@ -274,12 +340,12 @@ export default function InteractiveMap({
           />
           
           {/* Open Space Zones */}
-          <path id="OpenSpace1" d="M598.5 578L513 722L944 914.5L970 868.5L940 851L981.569 779L751.5 646L719.5 650L598.5 578Z" fill="#77E360" stroke="#1E1E1E"/>
-          <path id="OpenSpace3" d="M935.5 79.5L934.5 81.5L1056 151.242L996.095 255L992.342 261.5L1127 339.245L1148 302.872L1043.5 242.538L1049 233.5L1185 312.02L1244 209.829L1108.5 131.598L1112.6 124.5L1196.5 172.941L1206.28 156L1248.5 180.375L1239.48 196L1257 206.116L1253.89 211.5L1268 219.646L1265 224.842L1259.21 221.5L1197 329.254L1159.5 307.604L1060.65 478.811L1067 482.402L1065.5 485L1160.5 540L1378 163L935.5 79.5Z" fill="#77E360" stroke="#1E1E1E"/>
-          <path id="OpenSpace2" d="M972 301L1071.5 357.5L1042.5 409L1025.5 398.5L1017 414.5L1033.5 424L1013 459.5L979.5 440.5L976.5 445.5L885 393L922 328L948.5 342.5L972 301Z" fill="#77E360" stroke="#1E1E1E"/>
-          <path id="OpenSpace4" d="M837.086 451.5L782 419.696L783.268 417.5L785.015 414.5L756.436 398L790.5 339L822.156 356.5L836.5 331.656L803.5 312.604L806 308.274L796 302.5L736.5 406L776.5 498L836.5 460.515L839 456.185L840.839 453L838.241 451.5L837.952 452L837.086 451.5Z" fill="#77E360" stroke="#1E1E1E"/>
-          <path id="OpenSpace5" d="M815 273.5L815.054 273.406M815.054 273.406L829.722 248L855 262.594L840.332 288L815.054 273.406ZM732 413L732.034 413.077M732.034 413.077L766 490.5L760 500.892L701 466.829L732.034 413.077ZM893 137.5L991.5 194.369L961.691 246L863 189.021L892.746 137.5L893 137.5Z" fill="#77E360" stroke="#1E1E1E"/>
-          <path id="OpenSpace6" d="M971 773L971.083 772.91M971.083 772.91L977 766.5L1004.42 719L1027 730L1034.5 733L1038.5 726.5L932.845 665.5L895.895 729.5L971.083 772.91Z" fill="#77E360" stroke="#1E1E1E"/>
+          <path id="OpenSpace1" d="M598.5 578L513 722L944 914.5L970 868.5L940 851L981.569 779L751.5 646L719.5 650L598.5 578Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
+          <path id="OpenSpace3" d="M935.5 79.5L934.5 81.5L1056 151.242L996.095 255L992.342 261.5L1127 339.245L1148 302.872L1043.5 242.538L1049 233.5L1185 312.02L1244 209.829L1108.5 131.598L1112.6 124.5L1196.5 172.941L1206.28 156L1248.5 180.375L1239.48 196L1257 206.116L1253.89 211.5L1268 219.646L1265 224.842L1259.21 221.5L1197 329.254L1159.5 307.604L1060.65 478.811L1067 482.402L1065.5 485L1160.5 540L1378 163L935.5 79.5Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
+          <path id="OpenSpace2" d="M972 301L1071.5 357.5L1042.5 409L1025.5 398.5L1017 414.5L1033.5 424L1013 459.5L979.5 440.5L976.5 445.5L885 393L922 328L948.5 342.5L972 301Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
+          <path id="OpenSpace4" d="M837.086 451.5L782 419.696L783.268 417.5L785.015 414.5L756.436 398L790.5 339L822.156 356.5L836.5 331.656L803.5 312.604L806 308.274L796 302.5L736.5 406L776.5 498L836.5 460.515L839 456.185L840.839 453L838.241 451.5L837.952 452L837.086 451.5Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
+          <path id="OpenSpace5" d="M815 273.5L815.054 273.406M815.054 273.406L829.722 248L855 262.594L840.332 288L815.054 273.406ZM732 413L732.034 413.077M732.034 413.077L766 490.5L760 500.892L701 466.829L732.034 413.077ZM893 137.5L991.5 194.369L961.691 246L863 189.021L892.746 137.5L893 137.5Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
+          <path id="OpenSpace6" d="M971 773L971.083 772.91M971.083 772.91L977 766.5L1004.42 719L1027 730L1034.5 733L1038.5 726.5L932.845 665.5L895.895 729.5L971.083 772.91Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
 
           {/* Conservation Area Zones */}
           <path id="GardenWithGazebo" d="M1110.5 627L1035 584L1006.5 635L1081 678L1110.5 627Z" fill="#63FFFF" stroke="#1E1E1E"/>

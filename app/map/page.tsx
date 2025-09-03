@@ -30,6 +30,8 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Room[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedFloorLevel, setSelectedFloorLevel] = useState<number | 'all'>('all');
+  const [showFloorFilter, setShowFloorFilter] = useState(false);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
 
@@ -170,6 +172,17 @@ export default function MapPage() {
     } catch (error) {
       console.error('Failed to logout:', error);
     }
+  };
+
+  // Get available floor levels from buildings data
+  const getAvailableFloorLevels = () => {
+    const floorLevels = new Set<number>();
+    Object.values(buildings).forEach(building => {
+      for (let i = 1; i <= building.floors; i++) {
+        floorLevels.add(i);
+      }
+    });
+    return Array.from(floorLevels).sort((a, b) => a - b);
   };
 
   // Derived labels for UX
@@ -767,6 +780,56 @@ export default function MapPage() {
           </button>
         </div>
 
+        {/* Floor Level Filter Dropdown - Collapsible */}
+        <div className="absolute top-40 right-2 md:right-4 z-40">
+          {!showFloorFilter ? (
+            // Collapsed state - just a button
+            <button
+              onClick={() => setShowFloorFilter(true)}
+              className="bg-white rounded-lg shadow-lg px-3 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              title="Floor Level Filter"
+            >
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              <span className="text-sm font-medium text-gray-700">Floor Filter</span>
+            </button>
+          ) : (
+            // Expanded state - full dropdown
+            <div className="bg-white rounded-lg shadow-lg p-3 min-w-[220px]">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Floor Level Filter
+                </label>
+                <button
+                  onClick={() => setShowFloorFilter(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <select
+                id="floor-level-filter"
+                value={selectedFloorLevel}
+                onChange={(e) => setSelectedFloorLevel(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="all">All Floors</option>
+                {getAvailableFloorLevels().map(level => (
+                  <option key={level} value={level}>
+                    Floor {level}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Buildings with {selectedFloorLevel === 'all' ? 'any floor level' : `at least ${selectedFloorLevel} floor${selectedFloorLevel === 1 ? '' : 's'}`} will be highlighted
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Map Container */}
         <div 
           className="absolute inset-0 flex items-center justify-center"
@@ -786,6 +849,7 @@ export default function MapPage() {
             activeFloor={activeFloor}
             highlightedBuilding={selectedRoom?.buildingId || selectedBuilding?.id}
             showInlineInfo={false}
+            selectedFloorLevel={selectedFloorLevel}
           />
         </div>
       </div>
