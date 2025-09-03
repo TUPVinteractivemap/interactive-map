@@ -32,6 +32,14 @@ service cloud.firestore {
       allow write: if isAdmin();  // Only admins can modify admin collection
     }
 
+    // User history collection - users can only access their own history
+    match /user_history/{historyId} {
+      allow read, write: if request.auth != null &&
+        resource.data.userId == request.auth.uid;  // Can only access own history
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;  // Can only create own history
+    }
+
     // Allow admins to read all collections for statistics
     match /{collection}/{document=**} {
       allow read: if isAdmin();

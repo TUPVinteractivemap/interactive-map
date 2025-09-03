@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import InactivityProvider from "@/components/InactivityProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { HistoryProvider } from "@/contexts/HistoryContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,9 +22,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <InactivityProvider>
-            {children}
-          </InactivityProvider>
+          <HistoryProvider>
+            <InactivityProvider>
+              {children}
+            </InactivityProvider>
+          </HistoryProvider>
         </AuthProvider>
         <Toaster position="top-right" />
       </body>

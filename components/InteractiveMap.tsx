@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { findRoute } from '@/lib/routing';
 import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
+import { logRouteNavigation } from '@/lib/userHistory';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 
 interface InteractiveMapProps {
@@ -26,6 +28,7 @@ export default function InteractiveMap({
   highlightedBuilding,
   selectedFloorLevel = 'all'
 }: InteractiveMapProps) {
+  const { user } = useAuthContext();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
@@ -106,13 +109,29 @@ export default function InteractiveMap({
       if (origin && destination && origin !== destination) {
         const route = await findRoute(origin, destination);
         setCurrentRoute(route);
+
+        // Log route navigation to user history
+        if (user?.uid && route.length > 0 && buildings[origin] && buildings[destination]) {
+          try {
+            await logRouteNavigation(
+              user.uid,
+              origin,
+              destination,
+              buildings[origin].name,
+              buildings[destination].name,
+              route
+            );
+          } catch (error) {
+            console.error('❌ Failed to log route navigation:', error);
+          }
+        }
       } else {
         setCurrentRoute([]);
       }
     };
 
     loadRoute();
-  }, [origin, destination]);
+  }, [origin, destination, user?.uid, buildings]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {

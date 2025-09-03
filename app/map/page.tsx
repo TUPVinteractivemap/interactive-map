@@ -10,6 +10,8 @@ import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
 import type { Room } from '@/lib/rooms';
 import { searchRooms } from '@/lib/rooms';
 import { buildingCoordinates, getBuildingName, loadBuildingCoordinates } from '@/lib/routing';
+import { logBuildingSearch } from '@/lib/userHistory';
+import { History } from 'lucide-react';
 
 // Disable static generation/prerendering for this page to avoid server-side
 // Firebase initialization during build (Vercel static export phase)
@@ -374,6 +376,19 @@ export default function MapPage() {
                     Get Route
                   </button>
                 </div>
+
+                {/* History Link */}
+                {user && (
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <Link
+                      href="/history"
+                      className="flex items-center justify-center w-full py-3 px-4 text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors border border-red-200 hover:border-red-300"
+                    >
+                      <History className="w-4 h-4 mr-2" />
+                      View History
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Search Forms */}
@@ -492,11 +507,24 @@ export default function MapPage() {
                         </label>
                         <select
                           id="building"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const buildingId = e.target.value;
                             const building = buildings[buildingId];
                             if (building) {
                               setSelectedBuilding(building);
+
+                              // Log building selection to user history
+                              if (user?.uid) {
+                                try {
+                                  await logBuildingSearch(
+                                    user.uid,
+                                    buildingId,
+                                    building.name
+                                  );
+                                } catch (error) {
+                                  console.error('❌ Failed to log building selection:', error);
+                                }
+                              }
                             }
                           }}
                           className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white shadow-sm transition-all duration-200 hover:border-gray-300 text-gray-700 appearance-none cursor-pointer"

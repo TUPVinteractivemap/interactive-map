@@ -6,6 +6,7 @@ export interface Room {
   id: string;
   name: string;
   buildingId: string;
+  buildingName?: string;
   floor: number;
   description?: string;
   tags: string[];
@@ -19,9 +20,36 @@ export async function searchRooms(searchTerm: string): Promise<Room[]> {
     const roomsRef = collection(db, ROOMS_COLLECTION);
     const snapshot = await getDocs(roomsRef);
     const rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room));
-    
+
+    // Get unique building IDs
+    const buildingIds = [...new Set(rooms.map(room => room.buildingId))];
+
+    // Fetch building names
+    const buildingsRef = collection(db, BUILDINGS_COLLECTION);
+    const buildingPromises = buildingIds.map(async (buildingId) => {
+      try {
+        const buildingDoc = await getDoc(doc(buildingsRef, buildingId));
+        if (buildingDoc.exists()) {
+          const buildingData = buildingDoc.data() as BuildingInfo;
+          return { id: buildingId, name: buildingData.name };
+        }
+        return { id: buildingId, name: 'Unknown Building' };
+      } catch {
+        return { id: buildingId, name: 'Unknown Building' };
+      }
+    });
+
+    const buildings = await Promise.all(buildingPromises);
+    const buildingMap = new Map(buildings.map(b => [b.id, b.name]));
+
+    // Add building names to rooms
+    const roomsWithBuildingNames = rooms.map(room => ({
+      ...room,
+      buildingName: buildingMap.get(room.buildingId) || 'Unknown Building'
+    }));
+
     // Search in room names, descriptions, and tags
-    return rooms.filter(room => {
+    return roomsWithBuildingNames.filter(room => {
       const searchString = searchTerm.toLowerCase();
       return (
         room.name.toLowerCase().includes(searchString) ||
