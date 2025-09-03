@@ -33,27 +33,27 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+        {/* Logo and Title */}
+        <div className="flex flex-col items-center justify-center gap-2 mb-4 sm:mb-8">
+          <img
+            src="/images/tupv-logo.png"
+            alt="TUPV Logo"
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-md shadow"
+            style={{ background: 'white' }}
+          />
+          <span className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight">TUPV Interactive Map</span>
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="mb-4 sm:mb-8">
+          <div className="max-w-7xl mx-auto">
             <Link href="/map">
-              <Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-50">
-                <ArrowLeft className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-50 text-xs px-2 py-1">
+                <ArrowLeft className="h-4 w-4 mr-1" />
                 Back to Map
               </Button>
             </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <div className="p-2 bg-red-100 rounded-xl mr-3">
-                  <History className="h-8 w-8 text-red-600" />
-                </div>
-                Activity History
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Track your recent routes, building searches, and room searches
-              </p>
-            </div>
           </div>
         </div>
 

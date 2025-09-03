@@ -1,0 +1,21 @@
+{
+  "name": "TUPV Interactive Map",
+  "short_name": "TUPV Map",
+  "description": "Navigate the TUPV campus with ease using our interactive 2D map application.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b91c1c",
+  "icons": [
+    {
+      "src": "/images/tupv-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/tupv-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

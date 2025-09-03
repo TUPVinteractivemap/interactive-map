@@ -114,27 +114,33 @@ function HistoryItemCard({ item, onDelete }: HistoryItemCardProps) {
   };
 
   return (
-    <Card className="mb-3 hover:shadow-md transition-all duration-200 border-gray-100 hover:border-gray-200">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-4 flex-1">
-            <div className="flex-shrink-0 mt-1 p-2 bg-gray-50 rounded-lg">
+    <Card className="mb-2 sm:mb-3 hover:shadow-md transition-all duration-200 border-gray-100 hover:border-gray-200">
+      <CardContent className="p-3 sm:p-5">
+        <div className="flex items-start justify-between gap-2 sm:gap-0">
+          <div className="flex items-start space-x-2 sm:space-x-4 flex-1">
+            <div className="flex-shrink-0 mt-0.5 sm:mt-1 p-1 sm:p-2 bg-gray-50 rounded-lg">
               {getIcon()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-1 sm:mb-2">
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate mb-1">
+                  <h4
+                    className="text-xs sm:text-sm font-semibold text-gray-900 mb-0.5 sm:mb-1 max-w-[120px] sm:max-w-none truncate sm:whitespace-normal sm:overflow-visible"
+                    title={getTitle()}
+                  >
                     {getTitle()}
                   </h4>
-                  <p className="text-xs text-gray-600 mb-2">
+                  <p
+                    className="text-[10px] sm:text-xs text-gray-600 mb-1 sm:mb-2 truncate sm:whitespace-normal sm:overflow-visible max-w-[120px] sm:max-w-none"
+                    title={getSubtitle()}
+                  >
                     {getSubtitle()}
                   </p>
                 </div>
                 {getTypeBadge()}
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-500 flex items-center">
+                <p className="text-[10px] sm:text-xs text-gray-500 flex items-center">
                   <Clock className="h-3 w-3 mr-1" />
                   {formatTime(item.timestamp)}
                 </p>
@@ -143,9 +149,10 @@ function HistoryItemCard({ item, onDelete }: HistoryItemCardProps) {
           </div>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => onDelete(item.id!)}
-            className="flex-shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50 ml-3"
+            className="flex-shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50 ml-1 sm:ml-3 p-1 sm:p-2"
+            aria-label="Delete"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -302,16 +309,16 @@ export default function UserHistory() {
 
   return (
     <div className="space-y-8">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-white to-red-50 rounded-xl p-6 border border-red-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-red-100 rounded-xl">
-              <History className="h-8 w-8 text-red-600" />
+      {/* Header Section restored */}
+      <div className="bg-gradient-to-r from-white to-red-50 rounded-xl p-3 sm:p-6 border border-red-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="p-2 sm:p-3 bg-red-100 rounded-xl">
+              <History className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Activity History</h2>
-              <p className="text-gray-600 mt-1">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Activity History</h2>
+              <p className="text-xs sm:text-gray-600 mt-0.5 sm:mt-1">
                 Track your recent routes, building searches, and room searches
               </p>
             </div>
@@ -319,58 +326,58 @@ export default function UserHistory() {
           {history.length > 0 && (
             <Button
               onClick={clearAllHistory}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-base px-2 sm:px-4 py-1 sm:py-2"
             >
-              <Trash className="h-4 w-4 mr-2" />
-              Clear All History
+              <Trash className="h-4 w-4 mr-1 sm:mr-2" />
+              Clear All
             </Button>
           )}
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="bg-white rounded-lg p-2 sm:p-4 border border-gray-200">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="h-5 w-5 text-blue-600" />
+            <div className="p-1 sm:p-2 bg-blue-100 rounded-lg">
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Activities</p>
-              <p className="text-2xl font-bold text-gray-900">{history.length}</p>
+            <div className="ml-2 sm:ml-3">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{history.length}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+        <div className="bg-white rounded-lg p-2 sm:p-4 border border-gray-200">
           <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Navigation className="h-5 w-5 text-red-600" />
+            <div className="p-1 sm:p-2 bg-red-100 rounded-lg">
+              <Navigation className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Routes</p>
-              <p className="text-2xl font-bold text-gray-900">{routes.length}</p>
+            <div className="ml-2 sm:ml-3">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Routes</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{routes.length}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+        <div className="bg-white rounded-lg p-2 sm:p-4 border border-gray-200">
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Building2 className="h-5 w-5 text-green-600" />
+            <div className="p-1 sm:p-2 bg-green-100 rounded-lg">
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Buildings</p>
-              <p className="text-2xl font-bold text-gray-900">{buildingSearches.length}</p>
+            <div className="ml-2 sm:ml-3">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Buildings</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{buildingSearches.length}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+        <div className="bg-white rounded-lg p-2 sm:p-4 border border-gray-200">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <PinIcon className="h-5 w-5 text-purple-600" />
+            <div className="p-1 sm:p-2 bg-purple-100 rounded-lg">
+              <PinIcon className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Rooms</p>
-              <p className="text-2xl font-bold text-gray-900">{roomSearches.length}</p>
+            <div className="ml-2 sm:ml-3">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Rooms</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{roomSearches.length}</p>
             </div>
           </div>
         </div>
@@ -379,53 +386,53 @@ export default function UserHistory() {
       {/* Tabs Section */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-            <TabsList className="bg-white border border-gray-200">
+          <div className="border-b border-gray-200 bg-gray-50 px-2 sm:px-6 py-2 sm:py-4 overflow-x-auto">
+            <TabsList className="bg-white border border-gray-200 flex-nowrap overflow-x-auto">
               <TabsTrigger
                 value="all"
-                className="flex items-center space-x-2 px-6 py-2 data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-base data-[state=active]:bg-red-500 data-[state=active]:text-white"
               >
                 <History className="h-4 w-4" />
-                <span>All Activities</span>
-                <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                <span>All</span>
+                <span className="ml-1 sm:ml-2 bg-gray-200 text-gray-600 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
                   {history.length}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="routes"
-                className="flex items-center space-x-2 px-6 py-2 data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-base data-[state=active]:bg-red-500 data-[state=active]:text-white"
               >
                 <Navigation className="h-4 w-4" />
                 <span>Routes</span>
-                <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                <span className="ml-1 sm:ml-2 bg-gray-200 text-gray-600 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
                   {routes.length}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="buildings"
-                className="flex items-center space-x-2 px-6 py-2 data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-base data-[state=active]:bg-red-500 data-[state=active]:text-white"
               >
                 <Building2 className="h-4 w-4" />
                 <span>Buildings</span>
-                <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                <span className="ml-1 sm:ml-2 bg-gray-200 text-gray-600 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
                   {buildingSearches.length}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="rooms"
-                className="flex items-center space-x-2 px-6 py-2 data-[state=active]:bg-red-500 data-[state=active]:text-white"
+                className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-base data-[state=active]:bg-red-500 data-[state=active]:text-white"
               >
                 <PinIcon className="h-4 w-4" />
                 <span>Rooms</span>
-                <span className="ml-2 bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                <span className="ml-1 sm:ml-2 bg-gray-200 text-gray-600 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
                   {roomSearches.length}
                 </span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <div className="p-6">
-            <TabsContent value="all" className="space-y-4 mt-0">
+          <div className="p-2 sm:p-6">
+            <TabsContent value="all" className="space-y-2 sm:space-y-4 mt-0">
               <HistoryList
                 items={history}
                 loading={loading}
@@ -437,7 +444,7 @@ export default function UserHistory() {
               />
             </TabsContent>
 
-            <TabsContent value="routes" className="space-y-4 mt-0">
+            <TabsContent value="routes" className="space-y-2 sm:space-y-4 mt-0">
               <HistoryList
                 items={routes}
                 loading={loadingRoutes}
@@ -449,7 +456,7 @@ export default function UserHistory() {
               />
             </TabsContent>
 
-            <TabsContent value="buildings" className="space-y-4 mt-0">
+            <TabsContent value="buildings" className="space-y-2 sm:space-y-4 mt-0">
               <HistoryList
                 items={buildingSearches}
                 loading={loadingBuildingSearches}
@@ -461,7 +468,7 @@ export default function UserHistory() {
               />
             </TabsContent>
 
-            <TabsContent value="rooms" className="space-y-4 mt-0">
+            <TabsContent value="rooms" className="space-y-2 sm:space-y-4 mt-0">
               <HistoryList
                 items={roomSearches}
                 loading={loadingRoomSearches}
