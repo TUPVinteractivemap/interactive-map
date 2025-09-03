@@ -6,8 +6,9 @@ import { useEffect } from 'react';
 import UserHistory from '@/components/UserHistory';
 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, History } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function HistoryPage() {
   const { user, loading } = useAuthContext();
@@ -36,11 +37,14 @@ export default function HistoryPage() {
       <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
         {/* Logo and Title */}
         <div className="flex flex-col items-center justify-center gap-2 mb-4 sm:mb-8">
-          <img
+          <Image
             src="/images/tupv-logo.png"
             alt="TUPV Logo"
-            className="h-10 w-10 sm:h-12 sm:w-12 rounded-md shadow"
+            width={48}
+            height={48}
+            className="sm:w-12 sm:h-12 w-10 h-10 rounded-md shadow"
             style={{ background: 'white' }}
+            priority
           />
           <span className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight">TUPV Interactive Map</span>
         </div>
