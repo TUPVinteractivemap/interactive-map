@@ -34,6 +34,7 @@ export default function MapPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedFloorLevel, setSelectedFloorLevel] = useState<number | 'all'>('all');
   const [showFloorFilter, setShowFloorFilter] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
 
@@ -41,7 +42,7 @@ export default function MapPage() {
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+    setZoom(prev => Math.max(1, Math.min(3, prev + delta)));
   };
 
   // Handle touch gestures for mobile
@@ -72,7 +73,7 @@ export default function MapPage() {
       if (initialDistance) {
         const scale = currentDistance / initialDistance;
         const zoomDelta = (scale - 1) * 0.5;
-        setZoom(prev => Math.max(0.5, Math.min(3, prev + zoomDelta)));
+        setZoom(prev => Math.max(1, Math.min(3, prev + zoomDelta)));
         pinchInitialDistance.current = currentDistance;
       }
     }
@@ -779,8 +780,9 @@ export default function MapPage() {
 
       {/* Map Area */}
       <div className="fixed inset-0 md:static md:flex-1 bg-white overflow-hidden">
-        {/* Zoom Controls */}
-        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+        {/* Unified Map Controls */}
+        <div className="absolute top-6 right-6 md:top-4 md:right-4 z-10 flex flex-col gap-2">
+          {/* Zoom Controls */}
           <button
             onClick={() => setZoom(prev => Math.min(prev + 0.5, 5))}
             className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
@@ -792,8 +794,13 @@ export default function MapPage() {
           </button>
           <button
             onClick={() => setZoom(prev => Math.max(prev - 0.5, 1))}
-            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            className={`w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center transition-colors ${
+              zoom <= 1
+                ? 'opacity-50 cursor-not-allowed text-gray-400'
+                : 'hover:bg-gray-50 text-gray-700'
+            }`}
             title="Zoom Out"
+            disabled={zoom <= 1}
           >
             <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -801,29 +808,45 @@ export default function MapPage() {
           </button>
           <button
             onClick={() => setZoom(1)}
-            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors text-xs font-medium text-gray-700"
+            className={`w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center transition-colors text-xs font-medium ${
+              zoom === 1
+                ? 'opacity-50 cursor-not-allowed text-gray-400'
+                : 'hover:bg-gray-50 text-gray-700'
+            }`}
             title="Reset Zoom"
+            disabled={zoom === 1}
           >
             100%
           </button>
+
+          {/* Labels Toggle */}
+          <button
+            onClick={() => setShowLabels(!showLabels)}
+            className={`w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors ${
+              showLabels ? 'text-blue-600' : 'text-gray-400'
+            }`}
+            title={showLabels ? "Hide Building Labels" : "Show Building Labels"}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a.997.997 0 01-1.414 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          </button>
+
+          {/* Floor Filter Button */}
+          <button
+            onClick={() => setShowFloorFilter(!showFloorFilter)}
+            className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            title="Floor Level Filter"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </button>
         </div>
 
-        {/* Floor Level Filter Dropdown - Collapsible */}
-        <div className="absolute top-40 right-2 md:right-4 z-40">
-          {!showFloorFilter ? (
-            // Collapsed state - just a button
-            <button
-              onClick={() => setShowFloorFilter(true)}
-              className="bg-white rounded-lg shadow-lg px-3 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2"
-              title="Floor Level Filter"
-            >
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-              <span className="text-sm font-medium text-gray-700">Floor Filter</span>
-            </button>
-          ) : (
-            // Expanded state - full dropdown
+        {/* Floor Level Filter Dropdown - Now positioned relative to the button */}
+        {showFloorFilter && (
+          <div className="absolute top-32 right-2 md:top-52 md:right-4 z-40">
             <div className="bg-white rounded-lg shadow-lg p-3 min-w-[220px]">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -855,8 +878,8 @@ export default function MapPage() {
                 Buildings with {selectedFloorLevel === 'all' ? 'any floor level' : `at least ${selectedFloorLevel} floor${selectedFloorLevel === 1 ? '' : 's'}`} will be highlighted
               </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Map Container */}
         <div 
@@ -878,6 +901,8 @@ export default function MapPage() {
             highlightedBuilding={selectedRoom?.buildingId || selectedBuilding?.id}
             showInlineInfo={false}
             selectedFloorLevel={selectedFloorLevel}
+            showLabels={showLabels}
+            onToggleLabels={() => setShowLabels(!showLabels)}
           />
         </div>
       </div>
