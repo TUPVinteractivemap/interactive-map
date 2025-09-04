@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { findRoute } from '@/lib/routing';
 import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
 import { logRouteNavigation } from '@/lib/userHistory';
@@ -17,7 +17,6 @@ interface InteractiveMapProps {
   highlightedBuilding?: string;
   selectedFloorLevel?: number | 'all';
   showLabels?: boolean;
-  onToggleLabels?: () => void;
 }
 
 export default function InteractiveMap({
@@ -29,8 +28,7 @@ export default function InteractiveMap({
   activeFloor,
   highlightedBuilding,
   selectedFloorLevel = 'all',
-  showLabels: externalShowLabels,
-  onToggleLabels
+  showLabels: externalShowLabels
 }: InteractiveMapProps) {
   const { user } = useAuthContext();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
@@ -87,13 +85,13 @@ export default function InteractiveMap({
   };
 
   // Constrain position within boundaries
-  const constrainPosition = (x: number, y: number) => {
+  const constrainPosition = useCallback((x: number, y: number) => {
     const boundaries = getPanBoundaries();
     return {
       x: Math.max(boundaries.minX, Math.min(boundaries.maxX, x)),
       y: Math.max(boundaries.minY, Math.min(boundaries.maxY, y))
     };
-  };
+  }, [getPanBoundaries]);
 
   useEffect(() => {
     const loadBuildings = async () => {
@@ -152,7 +150,64 @@ export default function InteractiveMap({
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [position.x, position.y]);
+  }, [position.x, position.y, constrainPosition]);
+
+  // Calculate label positions to avoid overlaps
+  const calculateLabelPositions = useCallback(() => {
+    const positions: Record<string, { x: number; y: number }> = {};
+    const labelHeight = 20;
+    const labelSpacing = 5;
+
+    Object.values(buildings).forEach((building) => {
+      const baseX = building.center.x;
+      const baseY = building.center.y - 15; // Position above the building center
+      let yOffset = 0;
+
+      // Check for overlaps with previously positioned labels
+      let overlaps = true;
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (overlaps && attempts < maxAttempts) {
+        overlaps = false;
+        const currentLabelWidth = building.name.length * 7;
+
+        // Check overlap with all previously positioned labels
+        for (const [otherId, otherPos] of Object.entries(positions)) {
+          if (otherId === building.id) continue;
+
+          const otherBuilding = buildings[otherId];
+          if (!otherBuilding) continue;
+
+          const otherLabelWidth = otherBuilding.name.length * 7;
+
+          // Check if labels overlap horizontally and vertically
+          const thisLeft = baseX - currentLabelWidth / 2;
+          const thisRight = baseX + currentLabelWidth / 2;
+          const thisTop = baseY + yOffset - labelHeight / 2;
+          const thisBottom = baseY + yOffset + labelHeight / 2;
+
+          const otherLeft = otherPos.x - otherLabelWidth / 2;
+          const otherRight = otherPos.x + otherLabelWidth / 2;
+          const otherTop = otherPos.y - labelHeight / 2;
+          const otherBottom = otherPos.y + labelHeight / 2;
+
+          if (!(thisRight < otherLeft || thisLeft > otherRight ||
+                thisBottom < otherTop || thisTop > otherBottom)) {
+            overlaps = true;
+            // Try moving up or down alternately
+            yOffset += (attempts % 2 === 0 ? -1 : 1) * (labelHeight + labelSpacing);
+            break;
+          }
+        }
+        attempts++;
+      }
+
+      positions[building.id] = { x: baseX, y: baseY + yOffset };
+    });
+
+    return positions;
+  }, [buildings]);
 
   // Calculate label positions when buildings or zoom change
   useEffect(() => {
@@ -160,7 +215,7 @@ export default function InteractiveMap({
       const positions = calculateLabelPositions();
       setLabelPositions(positions);
     }
-  }, [buildings, localZoom, loading]);
+  }, [buildings, localZoom, loading, calculateLabelPositions]);
 
   // Handle mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -390,62 +445,6 @@ export default function InteractiveMap({
     };
   };
 
-  // Calculate label positions to avoid overlaps
-  const calculateLabelPositions = () => {
-    const positions: Record<string, { x: number; y: number }> = {};
-    const labelHeight = 20;
-    const labelSpacing = 5;
-
-    Object.values(buildings).forEach((building, index) => {
-      let baseX = building.center.x;
-      let baseY = building.center.y - 15; // Position above the building center
-      let yOffset = 0;
-
-      // Check for overlaps with previously positioned labels
-      let overlaps = true;
-      let attempts = 0;
-      const maxAttempts = 10;
-
-      while (overlaps && attempts < maxAttempts) {
-        overlaps = false;
-        const currentLabelWidth = building.name.length * 7;
-
-        // Check overlap with all previously positioned labels
-        for (const [otherId, otherPos] of Object.entries(positions)) {
-          if (otherId === building.id) continue;
-
-          const otherBuilding = buildings[otherId];
-          if (!otherBuilding) continue;
-
-          const otherLabelWidth = otherBuilding.name.length * 7;
-
-          // Check if labels overlap horizontally and vertically
-          const thisLeft = baseX - currentLabelWidth / 2;
-          const thisRight = baseX + currentLabelWidth / 2;
-          const thisTop = baseY + yOffset - labelHeight / 2;
-          const thisBottom = baseY + yOffset + labelHeight / 2;
-
-          const otherLeft = otherPos.x - otherLabelWidth / 2;
-          const otherRight = otherPos.x + otherLabelWidth / 2;
-          const otherTop = otherPos.y - labelHeight / 2;
-          const otherBottom = otherPos.y + labelHeight / 2;
-
-          if (!(thisRight < otherLeft || thisLeft > otherRight ||
-                thisBottom < otherTop || thisTop > otherBottom)) {
-            overlaps = true;
-            // Try moving up or down alternately
-            yOffset += (attempts % 2 === 0 ? -1 : 1) * (labelHeight + labelSpacing);
-            break;
-          }
-        }
-        attempts++;
-      }
-
-      positions[building.id] = { x: baseX, y: baseY + yOffset };
-    });
-
-    return positions;
-  };
 
 
 

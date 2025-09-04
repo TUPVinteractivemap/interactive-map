@@ -902,7 +902,6 @@ export default function MapPage() {
             showInlineInfo={false}
             selectedFloorLevel={selectedFloorLevel}
             showLabels={showLabels}
-            onToggleLabels={() => setShowLabels(!showLabels)}
           />
         </div>
       </div>
