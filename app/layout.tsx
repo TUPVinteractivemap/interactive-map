@@ -30,10 +30,10 @@ export const metadata: Metadata = {
     siteName: "TUPV Interactive Map",
     images: [
       {
-        url: "/images/tupv-logo.png",
+        url: "/og-image-tup.png",
         width: 1200,
         height: 630,
-        alt: "TUPV Interactive Map Logo"
+        alt: "TUPV Interactive Map - Navigate TUPV Campus"
       }
     ],
     locale: "en_PH",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TUPV Interactive Map",
     description: "Navigate the TUPV campus with ease using our interactive 2D map application.",
-    images: ["/images/tupv-logo.png"]
+    images: ["/og-image-tup.png"]
   },
   icons: {
     icon: "/favicon.ico",

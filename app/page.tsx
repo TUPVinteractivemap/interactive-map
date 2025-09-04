@@ -1,10 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+
+// Homepage images array for randomization
+const HOMEPAGE_IMAGES = [
+  '/images/homepage/tupv1.png',
+  '/images/homepage/tupv2.png',
+  '/images/homepage/tupv3.png',
+  '/images/homepage/tupv4.png',
+  '/images/homepage/tupv5.png'
+];
 
 // Prevent prerender to avoid initializing Firebase during build on the landing page
 export const dynamic = 'force-dynamic';
@@ -13,12 +22,25 @@ export const runtime = 'edge';
 export default function LandingPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [backgroundImage, setBackgroundImage] = useState('/images/tupv-campus.jpg');
 
   useEffect(() => {
     if (user) {
       router.push('/map');
     }
   }, [user, router]);
+
+  useEffect(() => {
+    // Generate a truly random image on each page load
+    const randomImage = HOMEPAGE_IMAGES[Math.floor(Math.random() * HOMEPAGE_IMAGES.length)];
+    setBackgroundImage(randomImage);
+
+    // Clear any stored image to ensure next refresh gets a new random one
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('currentRandomImage');
+      sessionStorage.removeItem('randomHomepageImage');
+    }
+  }, []);
 
   if (user) {
     return null; // Don't render anything while redirecting
@@ -29,7 +51,7 @@ export default function LandingPage() {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/tupv-campus.jpg"
+          src={backgroundImage}
           alt="TUPV Campus"
           fill
           className="object-cover brightness-[0.3] blur-[2px]"

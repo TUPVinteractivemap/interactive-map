@@ -34,3 +34,42 @@ export function calculatePathCenter(pathData: string): { x: number; y: number } 
 
   return { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) };
 }
+
+// Homepage image utilities
+const HOMEPAGE_IMAGES = [
+  '/images/homepage/tupv1.png',
+  '/images/homepage/tupv2.png',
+  '/images/homepage/tupv3.png',
+  '/images/homepage/tupv4.png',
+  '/images/homepage/tupv5.png'
+];
+
+export function getRandomHomepageImage(): string {
+  // Generate a new random image on each call for true randomization
+  if (typeof window !== 'undefined') {
+    const randomIndex = Math.floor(Math.random() * HOMEPAGE_IMAGES.length);
+    const selectedImage = HOMEPAGE_IMAGES[randomIndex];
+
+    // Store it temporarily to maintain consistency during the current page session
+    sessionStorage.setItem('currentRandomImage', selectedImage);
+    return selectedImage;
+  }
+
+  // Fallback for server-side rendering
+  return HOMEPAGE_IMAGES[0];
+}
+
+// Helper function to get the current random image without generating a new one
+export function getCurrentRandomImage(): string {
+  if (typeof window !== 'undefined') {
+    const storedImage = sessionStorage.getItem('currentRandomImage');
+    if (storedImage) {
+      return storedImage;
+    }
+  }
+  return HOMEPAGE_IMAGES[0];
+}
+
+export function getAllHomepageImages(): string[] {
+  return HOMEPAGE_IMAGES;
+}
