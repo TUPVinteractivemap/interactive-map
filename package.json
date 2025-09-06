@@ -10,7 +10,9 @@
     "migrate-buildings": "node scripts/migrate-buildings.mjs",
     "migrate-rooms": "node scripts/migrate-rooms.mjs",
     "migrate": "npm run migrate-buildings && npm run migrate-rooms",
-    "create-admin": "node scripts/create-admin.mjs"
+    "create-admin": "node scripts/create-admin.mjs",
+    "sync-users": "node scripts/sync-users.mjs",
+    "test-user-sync": "node scripts/test-user-sync.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.0",

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { BuildingInfo } from '@/lib/buildings';
 import { Button } from '@/components/ui/button';
 import { BuildingForm } from '@/components/admin/BuildingForm';
@@ -13,13 +14,16 @@ import {
 import { toast } from 'sonner';
 import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { adminDb } from '@/lib/adminAuth';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, LogOut, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-// import { useRouter } from 'next/navigation';
-// import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function MapEditor() {
+  const router = useRouter();
+  const { adminSignOut } = useAdminAuth();
   const [buildings, setBuildings] = useState<BuildingInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,9 +32,19 @@ export default function MapEditor() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  // const router = useRouter();
-  // const { adminSignOut } = useAdminAuth();
+
+  const handleLogout = async () => {
+    try {
+      console.log('Admin logging out...');
+      await adminSignOut();
+      console.log('Admin logged out successfully');
+      toast.success('Logged out successfully');
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Admin logout error:', error);
+      toast.error('Failed to logout');
+    }
+  };
 
   // Fetch and listen to buildings
   useEffect(() => {
@@ -147,65 +161,127 @@ export default function MapEditor() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Building Management</h1>
-        <div className="flex gap-4">
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Building
-          </Button>
+    <>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+        {/* Logo and Title */}
+        <div className="flex flex-col items-center justify-center gap-2 mb-4 sm:mb-8">
+          <Image
+            src="/images/tupv-logo.png"
+            alt="TUPV Logo"
+            width={48}
+            height={48}
+            className="sm:w-12 sm:h-12 w-10 h-10 rounded-md shadow"
+            style={{ background: 'white' }}
+            priority
+          />
+          <span className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight">TUPV Admin Dashboard</span>
         </div>
-      </div>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-        <Input
-          type="text"
-          placeholder="Search buildings..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+        {/* Navigation and Logout */}
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <Link href="/admin/dashboard">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredBuildings.map((building) => (
-          <Card key={building.id}>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>{building.name}</span>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedBuilding(building);
-                      setShowEditDialog(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedBuilding(building);
-                      setShowDeleteDialog(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
+        {/* Header */}
+          <div className="mb-4 sm:mb-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-gradient-to-r from-white to-red-50 rounded-xl p-3 sm:p-6 border border-red-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                  <div className="flex items-center space-x-2 sm:space-x-4">
+                    <div className="p-2 sm:p-3 bg-red-100 rounded-xl">
+                      <Plus className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Building Management</h2>
+                      <p className="text-xs sm:text-gray-600 mt-0.5 sm:mt-1">
+                        Add, edit, and manage campus buildings and locations
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button onClick={() => setShowAddDialog(true)} className="bg-red-500 hover:bg-red-600">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Building
+                    </Button>
+                  </div>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs font-mono text-gray-500 mb-2">ID: {building.id}</p>
-              <p className="text-sm text-gray-600">{building.description}</p>
-              <p className="text-sm text-gray-500 mt-2">Type: {building.type}</p>
-            </CardContent>
-          </Card>
-        ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="p-3 sm:p-6">
+                <div className="relative mb-6">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Input
+                    type="text"
+                    placeholder="Search buildings..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredBuildings.map((building) => (
+                    <Card key={building.id}>
+                      <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                          <span>{building.name}</span>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedBuilding(building);
+                                setShowEditDialog(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedBuilding(building);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs font-mono text-gray-500 mb-2">ID: {building.id}</p>
+                        <p className="text-sm text-gray-600">{building.description}</p>
+                        <p className="text-sm text-gray-500 mt-2">Type: {building.type}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Add Building Dialog */}
@@ -262,6 +338,6 @@ export default function MapEditor() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

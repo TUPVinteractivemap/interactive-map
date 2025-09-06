@@ -115,8 +115,8 @@ const buildingData: Record<string, BuildingInfo> = {
   // Multipurpose Activity Zone
   MultiPurposeHall: {
     id: 'MultiPurposeHall',
-    name: 'Multi-Purpose Hall',
-    description: 'Multi-purpose event and activity hall',
+    name: 'TUPV Gymnasium',
+    description: 'TUPV Gymnasium for physical education and sports activities',
     type: 'Multipurpose',
     pathData: buildingPaths.MultiPurposeHall,
     center: calculatePathCenter(buildingPaths.MultiPurposeHall),

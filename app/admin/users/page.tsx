@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, doc, deleteDoc, Timestamp, query } from 'firebase/firestore';
 import { adminDb } from '@/lib/adminAuth';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Trash2, Mail, Calendar, UserCircle } from 'lucide-react';
+import { Search, Trash2, Mail, Calendar, UserCircle, Users, LogOut, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
+import Link from 'next/link';
 
 import {
   Dialog,
@@ -27,12 +31,27 @@ interface UserData {
 }
 
 export default function UsersManagement() {
+  const router = useRouter();
+  const { adminSignOut } = useAdminAuth();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      console.log('Admin logging out...');
+      await adminSignOut();
+      console.log('Admin logged out successfully');
+      toast.success('Logged out successfully');
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Admin logout error:', error);
+      toast.error('Failed to logout');
+    }
+  };
 
   useEffect(() => {
     const syncUsersWithAuth = async () => {
@@ -121,69 +140,132 @@ export default function UsersManagement() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">User Management</h1>
-        <div className="text-sm text-gray-500">
-          Total Users: {users.length}
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+        {/* Logo and Title */}
+        <div className="flex flex-col items-center justify-center gap-2 mb-4 sm:mb-8">
+          <Image
+            src="/images/tupv-logo.png"
+            alt="TUPV Logo"
+            width={48}
+            height={48}
+            className="sm:w-12 sm:h-12 w-10 h-10 rounded-md shadow"
+            style={{ background: 'white' }}
+            priority
+          />
+          <span className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight">TUPV Admin Dashboard</span>
         </div>
-      </div>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-        <Input
-          type="text"
-          placeholder="Search users by name, email, or student ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+        {/* Navigation and Logout */}
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <Link href="/admin/dashboard">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredUsers.map((user) => (
-          <Card key={user.id} className="overflow-hidden">
-            <CardHeader className="bg-gray-50">
-              <CardTitle className="flex justify-between items-center">
-                <div className="flex items-center space-x-2">
-                  <UserCircle className="h-5 w-5 text-gray-500" />
-                  <span className="text-lg truncate">{user.name || 'No Name'}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setShowDeleteDialog(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-2">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{user.email}</span>
-                </div>
-                {user.studentId && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span className="font-medium mr-2">ID:</span>
-                    {user.studentId}
+        {/* Header */}
+        <div className="mb-4 sm:mb-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-gradient-to-r from-white to-red-50 rounded-xl p-3 sm:p-6 border border-red-100">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex items-center space-x-2 sm:space-x-4">
+                  <div className="p-2 sm:p-3 bg-red-100 rounded-xl">
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
                   </div>
-                )}
-                <div className="flex items-center text-xs text-gray-500">
-                  <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <div className="space-y-1">
-                    <div>Joined: {formatDate(user.createdAt)}</div>
-                    <div>Last login: {formatDate(user.lastLogin)}</div>
+                  <div>
+                    <h2 className="text-lg sm:text-2xl font-bold text-gray-900">User Management</h2>
+                    <p className="text-xs sm:text-gray-600 mt-0.5 sm:mt-1">
+                      Manage user accounts, view activity, and monitor system access
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    Total Users: <span className="font-semibold">{users.length}</span>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-7xl mx-auto">
+
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="p-3 sm:p-6">
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Input
+                  type="text"
+                  placeholder="Search users by name, email, or student ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredUsers.map((user) => (
+                  <Card key={user.id} className="overflow-hidden">
+                    <CardHeader className="bg-gray-50">
+                      <CardTitle className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                          <UserCircle className="h-5 w-5 text-gray-500" />
+                          <span className="text-lg truncate">{user.name || 'No Name'}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowDeleteDialog(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">{user.email}</span>
+                        </div>
+                        {user.studentId && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <span className="font-medium mr-2">ID:</span>
+                            {user.studentId}
+                          </div>
+                        )}
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <div className="space-y-1">
+                            <div>Joined: {formatDate(user.createdAt)}</div>
+                            <div>Last login: {formatDate(user.lastLogin)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}

@@ -10,8 +10,9 @@ import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
 import type { Room } from '@/lib/rooms';
 import { searchRooms } from '@/lib/rooms';
 import { buildingCoordinates, getBuildingName, loadBuildingCoordinates } from '@/lib/routing';
-import { logBuildingSearch } from '@/lib/userHistory';
+import { logBuildingSearch, logRoomSearch } from '@/lib/userHistory';
 import { History } from 'lucide-react';
+import { useHistoryContext } from '@/contexts/HistoryContext';
 
 // Disable static generation/prerendering for this page to avoid server-side
 // Firebase initialization during build (Vercel static export phase)
@@ -37,6 +38,7 @@ export default function MapPage() {
   const [showLabels, setShowLabels] = useState(true);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
+  const { refreshRoomSearches } = useHistoryContext();
 
   // Handle mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -133,12 +135,31 @@ export default function MapPage() {
     }
   };
 
-  const handleRoomSelect = (room: Room) => {
+  const handleRoomSelect = async (room: Room) => {
     setSelectedRoom(room);
     setActiveFloor(room.floor);
     // If we have the building info, select it as well
     if (buildings[room.buildingId]) {
       setSelectedBuilding(buildings[room.buildingId]);
+    }
+
+    // Log room search to user history
+    if (user?.uid) {
+      const buildingName = buildings[room.buildingId]?.name || 'Unknown Building';
+      try {
+        await logRoomSearch(
+          user.uid,
+          room.id,
+          room.name,
+          room.buildingId,
+          buildingName,
+          searchQuery.trim() || undefined
+        );
+        // Refresh room searches in history context
+        await refreshRoomSearches();
+      } catch (error) {
+        console.error('❌ Failed to log room selection:', error);
+      }
     }
   };
 
