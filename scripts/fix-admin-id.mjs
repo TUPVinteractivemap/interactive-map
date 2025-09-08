@@ -22,38 +22,38 @@ const db = getFirestore(app);
 
 async function fixAdminBuildingId() {
   try {
-    console.log('🔧 Fixing Administration Building ID typo...');
+    console.log('🔧 Reverting Administration Building ID back to original (misspelled)...');
 
     const buildingsRef = db.collection('buildings');
 
-    // Get the current document with the typo
-    const oldDoc = await buildingsRef.doc('AdminisitrationBldg').get();
+    // Get the current document with correct spelling
+    const correctDoc = await buildingsRef.doc('AdministrationBldg').get();
 
-    if (!oldDoc.exists) {
-      console.log('❌ Old document not found!');
+    if (!correctDoc.exists) {
+      console.log('❌ Correct document not found!');
       return;
     }
 
-    const data = oldDoc.data();
+    const data = correctDoc.data();
     console.log('📋 Current data:', data);
 
-    // Create new document with correct ID
-    const newDocRef = await buildingsRef.doc('AdministrationBldg').set(data);
-    console.log('✅ Created new document with correct ID: AdministrationBldg');
+    // Create new document with original misspelled ID
+    const newDocRef = await buildingsRef.doc('AdminisitrationBldg').set(data);
+    console.log('✅ Created new document with original ID: AdminisitrationBldg');
 
-    // Delete old document
-    await buildingsRef.doc('AdminisitrationBldg').delete();
-    console.log('🗑️  Deleted old document with typo');
+    // Delete correct document
+    await buildingsRef.doc('AdministrationBldg').delete();
+    console.log('🗑️  Deleted correct document');
 
     // Verify the fix
-    const verifyDoc = await buildingsRef.doc('AdministrationBldg').get();
+    const verifyDoc = await buildingsRef.doc('AdminisitrationBldg').get();
     if (verifyDoc.exists) {
-      console.log('✅ ID fix verified successfully!');
-      console.log('📍 New document ID: AdministrationBldg');
+      console.log('✅ ID revert verified successfully!');
+      console.log('📍 New document ID: AdminisitrationBldg');
     }
 
   } catch (error) {
-    console.error('❌ Error fixing Administration Building ID:', error);
+    console.error('❌ Error reverting Administration Building ID:', error);
   }
 }
 

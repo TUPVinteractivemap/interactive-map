@@ -5,6 +5,7 @@ import { findRoute } from '@/lib/routing';
 import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
 import { logRouteNavigation } from '@/lib/userHistory';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useHistoryContext } from '@/contexts/HistoryContext';
 
 
 interface InteractiveMapProps {
@@ -31,6 +32,7 @@ export default function InteractiveMap({
   showLabels: externalShowLabels
 }: InteractiveMapProps) {
   const { user } = useAuthContext();
+  const { refreshRoutes } = useHistoryContext();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
@@ -260,6 +262,8 @@ export default function InteractiveMap({
               buildings[destination].name,
               route
             );
+            // Refresh routes to update the UI
+            await refreshRoutes();
           } catch (error) {
             console.error('❌ Failed to log route navigation:', error);
           }

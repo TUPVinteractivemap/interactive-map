@@ -38,7 +38,7 @@ export default function MapPage() {
   const [showLabels, setShowLabels] = useState(true);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const { refreshRoomSearches } = useHistoryContext();
+  const { refreshRoomSearches, refreshBuildingSearches } = useHistoryContext();
 
   // Handle mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -543,6 +543,8 @@ export default function MapPage() {
                                     buildingId,
                                     building.name
                                   );
+                                  // Refresh building searches to update the UI
+                                  await refreshBuildingSearches();
                                 } catch (error) {
                                   console.error('❌ Failed to log building selection:', error);
                                 }

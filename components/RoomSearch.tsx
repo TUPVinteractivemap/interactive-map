@@ -6,6 +6,7 @@ import { searchRooms } from '@/lib/rooms';
 import type { Room } from '@/lib/rooms';
 import { logRoomSearch } from '@/lib/userHistory';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useHistoryContext } from '@/contexts/HistoryContext';
 
 interface RoomSearchProps {
   onRoomSelect: (room: Room) => void;
@@ -13,6 +14,7 @@ interface RoomSearchProps {
 
 export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
   const { user } = useAuthContext();
+  const { refreshRoomSearches } = useHistoryContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<Room[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -38,6 +40,8 @@ export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
             firstRoom.buildingName || 'Unknown Building',
             searchTerm
           );
+          // Refresh room searches to update the UI
+          await refreshRoomSearches();
         } catch (error) {
           console.error('❌ Failed to log room search:', error);
         }
@@ -83,6 +87,8 @@ export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
                       room.buildingId,
                       room.buildingName || 'Unknown Building'
                     );
+                    // Refresh room searches to update the UI
+                    await refreshRoomSearches();
                   } catch (error) {
                     console.error('❌ Failed to log room selection:', error);
                   }
