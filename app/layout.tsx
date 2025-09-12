@@ -11,6 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "TUPV Interactive Map",
   description: "Navigate the Technological University of the Philippines Visayas campus with ease using our interactive 2D map application. Find buildings, rooms, and plan your route!",
+  metadataBase: new URL("https://tupv-interactive-map.vercel.app/"),
   keywords: [
     "TUPV",
     "Technological University of the Philippines Visayas",

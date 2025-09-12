@@ -328,19 +328,6 @@ export default function MapPage() {
     }
   };
 
-  // Handle click outside for logout confirmation
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.logout-confirm-dialog')) {
-        setShowLogoutConfirm(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const handleClearRoute = () => {
     setOrigin('');
     setDestination('');
