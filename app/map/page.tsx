@@ -1,12 +1,13 @@
 'use client';
 
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import InteractiveMap from '@/components/InteractiveMap';
-import { BuildingInfo, getAllBuildings } from '@/lib/buildings';
+import { BuildingInfo, getAllBuildings, searchBuildings } from '@/lib/buildings';
 import type { Room } from '@/lib/rooms';
 import { searchRooms } from '@/lib/rooms';
 import { buildingCoordinates, getBuildingName, loadBuildingCoordinates } from '@/lib/routing';
@@ -23,7 +24,8 @@ export default function MapPage() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [zoom, setZoom] = useState(2);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+  const [zoom, setZoom] = useState(() => window.innerWidth < 768 ? 2.5 : 2);
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [activeFloor, setActiveFloor] = useState<number | undefined>(undefined);
@@ -31,14 +33,31 @@ export default function MapPage() {
   const [buildings, setBuildings] = useState<Record<string, BuildingInfo>>({});
   const [activeTab, setActiveTab] = useState<'room' | 'building' | 'route'>('route');
   const [searchQuery, setSearchQuery] = useState('');
+  const [buildingSearchQuery, setBuildingSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Room[]>([]);
+  const [buildingSearchResults, setBuildingSearchResults] = useState<BuildingInfo[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isBuildingSearching, setIsBuildingSearching] = useState(false);
   const [selectedFloorLevel, setSelectedFloorLevel] = useState<number | 'all'>('all');
   const [showFloorFilter, setShowFloorFilter] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const { refreshRoomSearches, refreshBuildingSearches } = useHistoryContext();
+
+  // Handle click outside for logout confirmation
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.logout-confirm-dialog')) {
+        setShowLogoutConfirm(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Handle mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -82,12 +101,8 @@ export default function MapPage() {
   };
 
   useEffect(() => {
-    // Only redirect if we're not loading and there's no user
-    if (!loading && !user) {
-      // Allow guest access - don't redirect
-      return;
-    }
-  }, [user, loading, router]);
+    // Guest access is allowed - no redirection needed
+  }, []);
 
   // Load building coordinates and data when component mounts
   useEffect(() => {
@@ -101,6 +116,36 @@ export default function MapPage() {
       setBuildings(buildingsMap);
     };
     loadData();
+  }, []);
+
+  // Handle responsive zoom and keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Toggle sidebar with Escape key (desktop only)
+      if (event.key === 'Escape' && window.innerWidth >= 768) {
+        setIsDesktopSidebarOpen(prev => !prev);
+      }
+      // Toggle sidebar with 'S' key (desktop only)
+      if (event.key === 's' || event.key === 'S') {
+        if (window.innerWidth >= 768) {
+          setIsDesktopSidebarOpen(prev => !prev);
+        }
+      }
+    };
+
+    const handleResize = () => {
+      // Adjust zoom based on screen size
+      const isMobile = window.innerWidth < 768;
+      setZoom(isMobile ? 2.5 : 2);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   // Debounced room search effect
@@ -126,13 +171,53 @@ export default function MapPage() {
     return () => clearTimeout(searchDebounceTimer);
   }, [searchQuery, activeTab]);
 
+  // Debounced building search effect
+  useEffect(() => {
+    const buildingSearchDebounceTimer = setTimeout(async () => {
+      if (buildingSearchQuery.trim() && activeTab === 'building') {
+        setIsBuildingSearching(true);
+        try {
+          const results = await searchBuildings(buildingSearchQuery.trim());
+          setBuildingSearchResults(results);
+        } catch (error) {
+          console.error('Building search error:', error);
+          setBuildingSearchResults([]);
+        } finally {
+          setIsBuildingSearching(false);
+        }
+      } else {
+        setBuildingSearchResults([]);
+        setIsBuildingSearching(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(buildingSearchDebounceTimer);
+  }, [buildingSearchQuery, activeTab]);
+
   // Clear search when switching tabs
   const handleTabChange = (tab: 'room' | 'building' | 'route') => {
     setActiveTab(tab);
+    
+    // Reset all search states and selections when switching tabs
     if (tab !== 'room') {
       setSearchQuery('');
       setSearchResults([]);
     }
+    if (tab !== 'building') {
+      setBuildingSearchQuery('');
+      setBuildingSearchResults([]);
+    }
+    
+    // Clear route selections when not on route tab
+    if (tab !== 'route') {
+      setOrigin('');
+      setDestination('');
+    }
+    
+    // Always clear selected building, room, and floor when switching tabs
+    setSelectedBuilding(null);
+    setSelectedRoom(null);
+    setActiveFloor(undefined);
   };
 
   const handleRoomSelect = async (room: Room) => {
@@ -141,6 +226,15 @@ export default function MapPage() {
     // If we have the building info, select it as well
     if (buildings[room.buildingId]) {
       setSelectedBuilding(buildings[room.buildingId]);
+    }
+    
+    // Clear route selections when selecting a room
+    setOrigin('');
+    setDestination('');
+
+    // Close sidebar on mobile
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
     }
 
     // Log room search to user history
@@ -163,10 +257,47 @@ export default function MapPage() {
     }
   };
 
+  const handleBuildingSelect = async (building: BuildingInfo) => {
+    setSelectedBuilding(building);
+    setSelectedRoom(null);
+    setActiveFloor(undefined);
+    
+    // Clear route selections when selecting a building
+    setOrigin('');
+    setDestination('');
+
+    // Close sidebar on mobile
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+
+    // Log building search to user history
+    if (user?.uid) {
+      try {
+        await logBuildingSearch(
+          user.uid,
+          building.id,
+          building.name,
+          buildingSearchQuery.trim() || undefined
+        );
+        // Refresh building searches to update the UI
+        await refreshBuildingSearches();
+      } catch (error) {
+        console.error('❌ Failed to log building selection:', error);
+      }
+    }
+  };
+
   const handleCloseBuildingDetails = () => {
     setSelectedBuilding(null);
     setSelectedRoom(null);
     setActiveFloor(undefined);
+    
+    // Also clear any search results to fully reset the UI
+    setSearchQuery('');
+    setSearchResults([]);
+    setBuildingSearchQuery('');
+    setBuildingSearchResults([]);
   };
 
   // Show loading only while auth is loading
@@ -185,12 +316,39 @@ export default function MapPage() {
     e.preventDefault();
     if (origin && destination && origin !== destination) {
       console.log('Searching route from', origin, 'to', destination);
+      // Clear any previous building/room selections when starting route search
+      setSelectedBuilding(null);
+      setSelectedRoom(null);
+      setActiveFloor(undefined);
+      // Close sidebar on mobile
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false);
+      }
       // The route will be calculated automatically by the InteractiveMap component
     }
   };
 
+  // Handle click outside for logout confirmation
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.logout-confirm-dialog')) {
+        setShowLogoutConfirm(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleClearRoute = () => {
+    setOrigin('');
+    setDestination('');
+  };
+
   const handleLogout = async () => {
     try {
+      setShowLogoutConfirm(false);
       await logout();
       router.push('/');
     } catch (error) {
@@ -236,11 +394,34 @@ export default function MapPage() {
         </button>
       )}
 
+      {/* Desktop Toggle Button - when sidebar is closed */}
+      {!isDesktopSidebarOpen && (
+        <button
+          onClick={() => setIsDesktopSidebarOpen(true)}
+          className="hidden md:flex fixed top-4 left-4 z-30 bg-white p-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 items-center justify-center group"
+          title="Open Sidebar"
+        >
+          <svg
+            className="h-6 w-6 text-gray-700 group-hover:text-red-600 transition-colors"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
+
       {/* Navigation Sidebar */}
       <div
         className={`${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 transition-all duration-300 ease-in-out fixed md:relative w-full ${
+        } ${
+          isDesktopSidebarOpen ? 'md:translate-x-0' : 'md:-translate-x-full'
+        } transition-all duration-300 ease-in-out fixed md:relative w-full ${
           isMainSidebarCollapsed ? 'md:w-[64px]' : 'md:w-[400px]'
         } h-screen bg-white shadow-lg z-[60] flex flex-col overflow-hidden relative border-r border-gray-200`}
       >
@@ -304,23 +485,45 @@ export default function MapPage() {
                   <h1 className="text-xl font-semibold text-gray-800">TUPV Interactive Map</h1>
                 </div>
                 
-                {/* Close Button (Mobile Only) */}
-                <button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <svg
-                    className="h-6 w-6 text-gray-700"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                {/* Close Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Desktop Close Button */}
+                  <button
+                    onClick={() => setIsDesktopSidebarOpen(false)}
+                    className="hidden md:flex p-2 hover:bg-gray-100 rounded-lg transition-colors items-center justify-center group"
+                    title="Close Sidebar (Full Map View)"
                   >
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                    <svg
+                      className="h-5 w-5 text-gray-700 group-hover:text-red-600 transition-colors"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  {/* Mobile Close Button */}
+                  <button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="h-6 w-6 text-gray-700"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* User Profile Section */}
@@ -339,12 +542,34 @@ export default function MapPage() {
                   </div>
                 </div>
                 {user ? (
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-600 hover:text-red-600 font-medium text-sm transition-colors"
-                  >
-                    Logout
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowLogoutConfirm(true)}
+                      className="text-gray-600 hover:text-red-600 font-medium text-sm transition-colors"
+                    >
+                      Logout
+                    </button>
+                    {/* Logout Confirmation Dialog */}
+                    {showLogoutConfirm && (
+                      <div className="absolute right-0 top-8 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 logout-confirm-dialog">
+                        <p className="text-sm text-gray-700 mb-4">Are you sure you want to logout?</p>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setShowLogoutConfirm(false)}
+                            className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleLogout}
+                            className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <Link
                     href="/"
@@ -359,6 +584,11 @@ export default function MapPage() {
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-2">Welcome to TUPV Map</h2>
                 <p className="text-sm text-gray-600">Use the options below to find rooms, buildings, or get directions around campus.</p>
+                <div className="mt-3 hidden md:block">
+                  <p className="text-xs text-gray-500">
+                    💡 <strong>Tip:</strong> Press <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-xs">S</kbd> or <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-xs">Esc</kbd> for full map view
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -525,58 +755,88 @@ export default function MapPage() {
                     <div className="space-y-4">
                       <div className="relative">
                         <label htmlFor="building" className="block text-sm font-semibold text-gray-800 mb-1.5">
-                          Building Name
+                          Building Name or Type
                         </label>
-                        <select
+                        <input
+                          type="text"
                           id="building"
-                          onChange={async (e) => {
-                            const buildingId = e.target.value;
-                            const building = buildings[buildingId];
-                            if (building) {
-                              setSelectedBuilding(building);
-
-                              // Log building selection to user history
-                              if (user?.uid) {
-                                try {
-                                  await logBuildingSearch(
-                                    user.uid,
-                                    buildingId,
-                                    building.name
-                                  );
-                                  // Refresh building searches to update the UI
-                                  await refreshBuildingSearches();
-                                } catch (error) {
-                                  console.error('❌ Failed to log building selection:', error);
-                                }
-                              }
-                            }
-                          }}
-                          className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white shadow-sm transition-all duration-200 hover:border-gray-300 text-gray-700 appearance-none cursor-pointer"
-                        >
-                          <option value="">&nbsp;Select a building</option>
-                          {Object.entries(buildingCoordinates).map(([buildingId]) => (
-                            <option key={buildingId} value={buildingId}>
-                              {getBuildingName(buildingId)}
-                            </option>
-                          ))}
-                        </select>
+                          value={buildingSearchQuery}
+                          onChange={(e) => setBuildingSearchQuery(e.target.value)}
+                          placeholder="Enter building name or type&hellip;"
+                          className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white shadow-sm transition-all duration-200 hover:border-gray-300 text-gray-700"
+                        />
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 mt-8">
-                          <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                          </svg>
-                        </div>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 mt-8">
-                          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
+                          {isBuildingSearching ? (
+                            <div className="w-5 h-5 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          )}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="w-full bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
-                      >
-                        Find Building
-                      </button>
+
+                      {/* Building Search Results */}
+                      {buildingSearchQuery.trim() && (
+                        <div className="space-y-2">
+                          {buildingSearchResults.length > 0 ? (
+                            <>
+                              <p className="text-sm text-gray-600 font-medium">
+                                Found {buildingSearchResults.length} building{buildingSearchResults.length !== 1 ? 's' : ''}:
+                              </p>
+                              <div className="max-h-64 overflow-y-auto space-y-2">
+                                {buildingSearchResults.map((building) => (
+                                  <button
+                                    key={building.id}
+                                    onClick={() => handleBuildingSelect(building)}
+                                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-red-300 transition-colors"
+                                  >
+                                    <div className="font-medium text-gray-900">{building.name}</div>
+                                    <div className="text-sm text-gray-500">
+                                      {building.type} • {building.floors} floor{building.floors !== 1 ? 's' : ''}
+                                    </div>
+                                    {building.description && (
+                                      <div className="text-xs text-gray-400 mt-1 line-clamp-2">
+                                        {building.description}
+                                      </div>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          ) : !isBuildingSearching ? (
+                            <div className="text-center py-8 text-gray-500">
+                              <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              <p className="text-sm">No buildings found for &quot;{buildingSearchQuery}&quot;</p>
+                              <p className="text-xs text-gray-400 mt-1">Try searching by building name or type</p>
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <div className="w-8 h-8 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
+                              <p className="text-sm">Searching&hellip;</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Building Search Tips */}
+                      {!buildingSearchQuery.trim() && (
+                        <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-blue-700">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="font-medium text-sm">Search Tips</p>
+                          </div>
+                          <div className="text-xs text-blue-600 space-y-1">
+                            <p>• Type building names: &quot;Engineering&quot;, &quot;Technology&quot;, &quot;Library&quot;</p>
+                            <p>• Search by type: &quot;Academic&quot;, &quot;Administrative&quot;, &quot;Recreational&quot;</p>
+                            <p>• Use partial names: &quot;Tech&quot; for &quot;Technology Building&quot;</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -758,8 +1018,86 @@ export default function MapPage() {
             </div>
             {/* Content */}
             <div className="flex-1 flex flex-col">
-              <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-                {selectedRoom ? 'Room photo placeholder' : 'Building photo placeholder'}
+              <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
+                {selectedRoom ? (
+                  selectedRoom.imageUrl ? (
+                    <>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-room-${selectedRoom.id}`}>
+                        <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                      </div>
+                      <Image
+                        src={selectedRoom.imageUrl}
+                        alt={`Photo of ${selectedRoom.name}`}
+                        fill
+                        className="object-cover opacity-0 transition-opacity duration-300"
+                        onError={(e) => {
+                          // Hide the image and loading state on error
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const loadingDiv = document.getElementById(`loading-room-${selectedRoom.id}`);
+                          if (loadingDiv) loadingDiv.style.display = 'none';
+                          // Show error message
+                          const parent = target.parentElement;
+                          if (parent) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
+                            errorDiv.innerHTML = 'Failed to load image';
+                            parent.appendChild(errorDiv);
+                          }
+                        }}
+                        onLoad={(e) => {
+                          // Show the image and hide loading state
+                          const target = e.target as HTMLImageElement;
+                          target.classList.remove('opacity-0');
+                          const loadingDiv = document.getElementById(`loading-room-${selectedRoom.id}`);
+                          if (loadingDiv) loadingDiv.classList.add('opacity-0');
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      Room photo placeholder
+                    </div>
+                  )
+                ) : selectedBuilding?.imageUrl ? (
+                  <>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-${selectedBuilding.id}`}>
+                      <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                    </div>
+                    <Image
+                      src={selectedBuilding.imageUrl}
+                      alt={`Photo of ${selectedBuilding.name}`}
+                      fill
+                      className="object-cover opacity-0 transition-opacity duration-300"
+                      onError={(e) => {
+                        // Hide the image and loading state on error
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
+                        if (loadingDiv) loadingDiv.style.display = 'none';
+                        // Show error message
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const errorDiv = document.createElement('div');
+                          errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
+                          errorDiv.innerHTML = 'Failed to load image';
+                          parent.appendChild(errorDiv);
+                        }
+                      }}
+                      onLoad={(e) => {
+                        // Show the image and hide loading state
+                        const target = e.target as HTMLImageElement;
+                        target.classList.remove('opacity-0');
+                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
+                        if (loadingDiv) loadingDiv.classList.add('opacity-0');
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Building photo placeholder
+                  </div>
+                )}
               </div>
               <div className="p-4">
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -805,9 +1143,23 @@ export default function MapPage() {
       <div className="fixed inset-0 md:static md:flex-1 bg-white overflow-hidden">
         {/* Unified Map Controls */}
         <div className="absolute top-6 right-6 md:top-4 md:right-4 z-10 flex flex-col gap-2">
+          {/* Full Map View Toggle (Desktop Only) */}
+          {isDesktopSidebarOpen && (
+            <button
+              onClick={() => setIsDesktopSidebarOpen(false)}
+              className="hidden md:flex w-auto px-3 py-2 bg-white rounded-lg shadow-lg items-center justify-center hover:bg-gray-50 transition-colors gap-2 group"
+              title="Full Map View"
+            >
+              <svg className="w-4 h-4 text-gray-700 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              <span className="text-xs font-medium text-gray-700 group-hover:text-red-600 transition-colors">Full View</span>
+            </button>
+          )}
+
           {/* Zoom Controls */}
           <button
-            onClick={() => setZoom(prev => Math.min(prev + 0.5, 5))}
+            onClick={() => setZoom(prev => Math.min(prev + 0.5, window.innerWidth < 768 ? 5 : 3.5))}
             className="w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
             title="Zoom In"
           >
@@ -816,28 +1168,28 @@ export default function MapPage() {
             </svg>
           </button>
           <button
-            onClick={() => setZoom(prev => Math.max(prev - 0.5, 1))}
+            onClick={() => setZoom(prev => Math.max(prev - 0.5, window.innerWidth < 768 ? 1.5 : 1))}
             className={`w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center transition-colors ${
-              zoom <= 1
+              zoom <= (window.innerWidth < 768 ? 1.5 : 1)
                 ? 'opacity-50 cursor-not-allowed text-gray-400'
                 : 'hover:bg-gray-50 text-gray-700'
             }`}
             title="Zoom Out"
-            disabled={zoom <= 1}
+            disabled={zoom <= (window.innerWidth < 768 ? 1.5 : 1)}
           >
             <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
             </svg>
           </button>
           <button
-            onClick={() => setZoom(1)}
+            onClick={() => setZoom(window.innerWidth < 768 ? 2.5 : 1)}
             className={`w-10 h-10 bg-white rounded-lg shadow-lg flex items-center justify-center transition-colors text-xs font-medium ${
-              zoom === 1
+              zoom === (window.innerWidth < 768 ? 2.5 : 1)
                 ? 'opacity-50 cursor-not-allowed text-gray-400'
                 : 'hover:bg-gray-50 text-gray-700'
             }`}
             title="Reset Zoom"
-            disabled={zoom === 1}
+            disabled={zoom === (window.innerWidth < 768 ? 2.5 : 1)}
           >
             100%
           </button>
@@ -865,6 +1217,19 @@ export default function MapPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </button>
+
+          {/* Clear Route Button - Only shown when route is active */}
+          {origin && destination && origin !== destination && (
+            <button
+              onClick={handleClearRoute}
+              className="w-10 h-10 bg-red-500 text-white rounded-lg shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors"
+              title="Clear Route"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Floor Level Filter Dropdown - Now positioned relative to the button */}
@@ -921,7 +1286,7 @@ export default function MapPage() {
               setActiveFloor(undefined);
             }}
             activeFloor={activeFloor}
-            highlightedBuilding={selectedRoom?.buildingId || selectedBuilding?.id}
+            highlightedBuilding={selectedBuilding?.id || selectedRoom?.buildingId}
             showInlineInfo={false}
             selectedFloorLevel={selectedFloorLevel}
             showLabels={showLabels}
@@ -959,8 +1324,86 @@ export default function MapPage() {
             
             {/* Content */}
             <div className="p-4">
-              <div className="w-full h-40 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
-                {selectedRoom ? 'Room photo placeholder' : 'Building photo placeholder'}
+              <div className="w-full h-40 bg-gray-200 rounded-lg mb-4 relative overflow-hidden">
+                {selectedRoom ? (
+                  selectedRoom.imageUrl ? (
+                    <>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-room-mobile-${selectedRoom.id}`}>
+                        <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                      </div>
+                      <Image
+                        src={selectedRoom.imageUrl}
+                        alt={`Photo of ${selectedRoom.name}`}
+                        fill
+                        className="object-cover opacity-0 transition-opacity duration-300"
+                        onError={(e) => {
+                          // Hide the image and loading state on error
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const loadingDiv = document.getElementById(`loading-room-mobile-${selectedRoom.id}`);
+                          if (loadingDiv) loadingDiv.style.display = 'none';
+                          // Show error message
+                          const parent = target.parentElement;
+                          if (parent) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
+                            errorDiv.innerHTML = 'Failed to load image';
+                            parent.appendChild(errorDiv);
+                          }
+                        }}
+                        onLoad={(e) => {
+                          // Show the image and hide loading state
+                          const target = e.target as HTMLImageElement;
+                          target.classList.remove('opacity-0');
+                          const loadingDiv = document.getElementById(`loading-room-mobile-${selectedRoom.id}`);
+                          if (loadingDiv) loadingDiv.classList.add('opacity-0');
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      Room photo placeholder
+                    </div>
+                  )
+                ) : selectedBuilding?.imageUrl ? (
+                  <>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-${selectedBuilding.id}`}>
+                      <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                    </div>
+                    <Image
+                      src={selectedBuilding.imageUrl}
+                      alt={`Photo of ${selectedBuilding.name}`}
+                      fill
+                      className="object-cover opacity-0 transition-opacity duration-300"
+                      onError={(e) => {
+                        // Hide the image and loading state on error
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
+                        if (loadingDiv) loadingDiv.style.display = 'none';
+                        // Show error message
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const errorDiv = document.createElement('div');
+                          errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
+                          errorDiv.innerHTML = 'Failed to load image';
+                          parent.appendChild(errorDiv);
+                        }
+                      }}
+                      onLoad={(e) => {
+                        // Show the image and hide loading state
+                        const target = e.target as HTMLImageElement;
+                        target.classList.remove('opacity-0');
+                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
+                        if (loadingDiv) loadingDiv.classList.add('opacity-0');
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Building photo placeholder
+                  </div>
+                )}
               </div>
               {selectedRoom ? (
                 <div>

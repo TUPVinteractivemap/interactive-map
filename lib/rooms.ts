@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { BuildingInfo } from './buildings';
 
 export interface Room {
@@ -10,6 +10,7 @@ export interface Room {
   floor: number;
   description?: string;
   tags: string[];
+  imageUrl?: string; // Optional Imgur URL for room image
 }
 
 const ROOMS_COLLECTION = 'rooms';
@@ -125,5 +126,54 @@ export async function getBuildingForRoom(roomId: string): Promise<BuildingInfo |
   } catch (error) {
     console.error('Error fetching building for room:', error);
     throw new Error('Failed to fetch building. Please try again later.');
+  }
+}
+
+// Add a new room
+export async function addRoom(room: Omit<Room, 'id'>): Promise<string> {
+  try {
+    const roomsRef = collection(db, ROOMS_COLLECTION);
+    const docRef = await addDoc(roomsRef, {
+      ...room,
+      tags: room.tags || [], // Ensure tags array exists
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding room:', error);
+    throw new Error('Failed to add room. Please try again later.');
+  }
+}
+
+// Update an existing room
+export async function updateRoom(id: string, room: Partial<Room>): Promise<void> {
+  try {
+    const roomRef = doc(db, ROOMS_COLLECTION, id);
+    await updateDoc(roomRef, room);
+  } catch (error) {
+    console.error('Error updating room:', error);
+    throw new Error('Failed to update room. Please try again later.');
+  }
+}
+
+// Delete a room
+export async function deleteRoom(id: string): Promise<void> {
+  try {
+    const roomRef = doc(db, ROOMS_COLLECTION, id);
+    await deleteDoc(roomRef);
+  } catch (error) {
+    console.error('Error deleting room:', error);
+    throw new Error('Failed to delete room. Please try again later.');
+  }
+}
+
+// Get all rooms
+export async function getAllRooms(): Promise<Room[]> {
+  try {
+    const roomsRef = collection(db, ROOMS_COLLECTION);
+    const snapshot = await getDocs(roomsRef);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Room));
+  } catch (error) {
+    console.error('Error fetching all rooms:', error);
+    throw new Error('Failed to fetch rooms. Please try again later.');
   }
 }

@@ -51,7 +51,7 @@ export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
     } finally {
       setIsSearching(false);
     }
-  }, [searchTerm, user?.uid]);
+  }, [searchTerm, user?.uid, refreshRoomSearches]);
 
   return (
     <div className="space-y-4">

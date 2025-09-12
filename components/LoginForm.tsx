@@ -8,12 +8,12 @@ import { useForm } from 'react-hook-form';
 import { LoginFormData, loginSchema } from '@/lib/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const form = useForm<LoginFormData>({
@@ -44,6 +44,24 @@ export default function LoginForm() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogle();
+      toast.success('Successfully signed in with Google');
+      router.push('/map');
+    } catch (error: unknown) {
+      console.error('Google sign in error:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An error occurred during Google sign in';
+      toast.error(errorMessage);
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
+
   return (
     <>
       <h1 className="text-3xl font-bold text-center mb-2">
@@ -56,15 +74,15 @@ export default function LoginForm() {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium text-white">
+          <label htmlFor="email" className="block text-sm font-medium">
             Email
           </label>
-          <Input
+          <input
             {...form.register('email')}
             type="email"
             id="email"
             className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-            placeholder="Enter your email"
+            placeholder="Enter your email address"
             disabled={isLoading}
           />
           {form.formState.errors.email && (
@@ -73,10 +91,10 @@ export default function LoginForm() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium text-white">
+          <label htmlFor="password" className="block text-sm font-medium">
             Password
           </label>
-          <Input
+          <input
             {...form.register('password')}
             type="password"
             id="password"
@@ -105,14 +123,42 @@ export default function LoginForm() {
           </Link>
         </div>
 
-        <Button
+        <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isGoogleLoading}
           className="w-full bg-red-500 hover:bg-red-600 text-white py-4 px-6 rounded-xl font-semibold transition-all mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
-        </Button>
+        </button>
       </form>
+
+      {/* Divider */}
+      <div className="relative my-8 w-full">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/20"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 text-white/60 bg-black/20 backdrop-blur-sm">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Social Sign In */}
+      <div className="flex gap-3 w-full">
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={isLoading || isGoogleLoading}
+          className="flex-1 flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Image
+            src="/images/google-icon.svg"
+            alt="Google"
+            width={24}
+            height={24}
+            className="group-hover:scale-110 transition-transform"
+          />
+          <span>{isGoogleLoading ? 'Signing in...' : 'Google'}</span>
+        </button>
+      </div>
 
       {/* Sign Up Link */}
       <p className="mt-8 text-center text-sm text-white">

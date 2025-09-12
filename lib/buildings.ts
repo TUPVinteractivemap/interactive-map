@@ -12,6 +12,7 @@ export interface BuildingInfo {
     y: number;
   };
   floors: number; // Number of floors in the building
+  imageUrl?: string; // Optional Imgur URL for building image
 }
 
 const BUILDINGS_COLLECTION = 'buildings';
@@ -57,6 +58,27 @@ export async function deleteBuilding(id: string): Promise<void> {
   } catch (error) {
     console.error('Error deleting building:', error);
     throw new Error('Failed to delete building. Please try again later.');
+  }
+}
+
+export async function searchBuildings(searchTerm: string): Promise<BuildingInfo[]> {
+  try {
+    const buildingsRef = collection(db, BUILDINGS_COLLECTION);
+    const snapshot = await getDocs(buildingsRef);
+    const buildings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BuildingInfo));
+
+    // Search in building names, descriptions, and types
+    return buildings.filter(building => {
+      const searchString = searchTerm.toLowerCase();
+      return (
+        building.name.toLowerCase().includes(searchString) ||
+        building.description?.toLowerCase().includes(searchString) ||
+        building.type.toLowerCase().includes(searchString)
+      );
+    });
+  } catch (error) {
+    console.error('Error searching buildings:', error);
+    throw new Error('Failed to search buildings. Please try again later.');
   }
 }
 

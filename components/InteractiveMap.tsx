@@ -52,7 +52,7 @@ export default function InteractiveMap({
   const showLabels = externalShowLabels ?? true;
 
   // Calculate pan boundaries based on zoom and container dimensions
-  const getPanBoundaries = () => {
+  const getPanBoundaries = useCallback(() => {
     if (!containerRef.current) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
     const container = containerRef.current;
@@ -84,7 +84,7 @@ export default function InteractiveMap({
       minY: -maxPanY,
       maxY: maxPanY
     };
-  };
+  }, [localZoom]);
 
   // Constrain position within boundaries
   const constrainPosition = useCallback((x: number, y: number) => {
@@ -139,7 +139,7 @@ export default function InteractiveMap({
     if (constrainedPosition.x !== position.x || constrainedPosition.y !== position.y) {
       setPosition(constrainedPosition);
     }
-  }, [localZoom]);
+  }, [localZoom, position.x, position.y, constrainPosition]);
 
   // Handle window resize to update boundaries
   useEffect(() => {
@@ -274,7 +274,7 @@ export default function InteractiveMap({
     };
 
     loadRoute();
-  }, [origin, destination, user?.uid, buildings]);
+  }, [origin, destination, user?.uid, buildings, refreshRoutes]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
@@ -345,86 +345,68 @@ export default function InteractiveMap({
     let color;
     const building = buildings[buildingId];
 
-    // Floor level filtering logic
-    if (selectedFloorLevel !== 'all' && building) {
-      // If a specific floor level is selected, check if building has that level
+    // Check if this building is highlighted (selected from search)
+    const isHighlighted = highlightedBuilding === buildingId;
+    const isHovered = hoveredBuilding === buildingId;
+
+    // Default color based on building type
+    const getDefaultColor = () => {
+      switch (type) {
+        case 'Academic':
+          return '#678DFF';
+        case 'Administrative':
+          return '#FF6D6D';
+        case 'Recreational':
+          return '#FFC76D';
+        case 'Conservation':
+          return '#63FFFF';
+        case 'Multipurpose':
+          return '#1B9C00';
+        case 'IGP':
+          return '#FF946D';
+        case 'Utilities':
+          return '#B163FF';
+        case 'Security':
+          return '#FFFFFF';
+        case 'Parking':
+          return '#4A4A4A';
+        case 'Open Space':
+          return '#77E360';
+        default:
+          return '#678DFF';
+      }
+    };
+
+    // Priority: Highlighted > Hovered > Floor Filter > Default
+    if (isHighlighted) {
+      // Building is highlighted from search - use same yellow as hover
+      color = '#FFD700'; // Gold for highlighted buildings (same as hover)
+      opacity = 1;
+    } else if (isHovered) {
+      // Building is being hovered
+      color = '#FFD700'; // Gold for hover
+      opacity = 1;
+    } else if (selectedFloorLevel !== 'all' && building) {
+      // Floor level filtering logic
       if (building.floors < selectedFloorLevel) {
         // Building doesn't have the selected floor level, show in gray
         color = '#D3D3D3'; // Light gray for non-matching buildings
+        opacity = 0.6;
       } else {
         // Building has the selected floor level, show normal color
-        if (hoveredBuilding === buildingId) {
-          color = '#FFD700'; // Gold for hover
-        } else {
-          color = (() => {
-            switch (type) {
-              case 'Academic':
-                return '#678DFF';
-              case 'Administrative':
-                return '#FF6D6D';
-              case 'Recreational':
-                return '#FFC76D';
-              case 'Conservation':
-                return '#63FFFF';
-              case 'Multipurpose':
-                return '#1B9C00';
-              case 'IGP':
-                return '#FF946D';
-              case 'Utilities':
-                return '#B163FF';
-              case 'Security':
-                return '#FFFFFF';
-              case 'Parking':
-                return '#4A4A4A';
-              case 'Open Space':
-                return '#77E360'; // Always green for Open Space buildings
-              default:
-                return '#678DFF';
-            }
-          })();
-        }
+        color = getDefaultColor();
+        opacity = 1;
       }
     } else {
-      // No floor filter selected, show normal colors
-      if (hoveredBuilding === buildingId) {
-        color = '#FFD700'; // Gold for hover
+      // Default state
+      color = getDefaultColor();
+      
+      // If there's an active floor and this building has multiple floors, reduce opacity slightly
+      if (activeFloor !== undefined && building?.floors > 1 && !isHighlighted) {
+        opacity = 0.7;
       } else {
-        color = (() => {
-          switch (type) {
-            case 'Academic':
-              return '#678DFF';
-            case 'Administrative':
-              return '#FF6D6D';
-            case 'Recreational':
-              return '#FFC76D';
-            case 'Conservation':
-              return '#63FFFF';
-            case 'Multipurpose':
-              return '#1B9C00';
-            case 'IGP':
-              return '#FF946D';
-            case 'Utilities':
-              return '#B163FF';
-            case 'Security':
-              return '#FFFFFF';
-            case 'Parking':
-              return '#4A4A4A';
-            case 'Open Space':
-              return '#77E360';
-            default:
-              return '#678DFF';
-          }
-        })();
+        opacity = 1;
       }
-    }
-
-    // If there's an active floor and this is the highlighted building
-    if (activeFloor !== undefined && highlightedBuilding === buildingId) {
-      color = '#FFD700'; // Highlight color for the active building
-      opacity = 1;
-    } else if (activeFloor !== undefined && building?.floors > 1) {
-      // Reduce opacity for multi-floor buildings when a specific floor is selected
-      opacity = 0.4;
     }
 
     return {
@@ -541,20 +523,45 @@ export default function InteractiveMap({
 
           {/* Buildings Layer */}
           <g id="buildings">
-            {!loading && Object.entries(buildings).map(([buildingId, building]) => (
-              <path
-                key={buildingId}
-                id={buildingId}
-                d={building.pathData}
-                {...getBuildingStyle(buildingId, building.type)}
-                stroke="#1E1E1E"
-                strokeWidth={hoveredBuilding === buildingId ? "3" : "1"}
-                className="cursor-pointer transition-all duration-200"
-                onClick={() => handleBuildingClick(buildingId)}
-                onMouseEnter={() => handleBuildingHover(buildingId)}
-                onMouseLeave={handleBuildingLeave}
-              />
-            ))}
+            {!loading && Object.entries(buildings).map(([buildingId, building]) => {
+              const isHighlighted = highlightedBuilding === buildingId;
+              const isHovered = hoveredBuilding === buildingId;
+              
+              return (
+                <g key={buildingId}>
+                  {/* Highlight glow effect for highlighted buildings */}
+                  {isHighlighted && (
+                    <path
+                      d={building.pathData}
+                      fill="none"
+                      stroke="#FF6B35"
+                      strokeWidth="8"
+                      opacity="0.4"
+                      style={{
+                        filter: 'blur(4px)',
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Main building path */}
+                  <path
+                    id={buildingId}
+                    d={building.pathData}
+                    {...getBuildingStyle(buildingId, building.type)}
+                    stroke={isHighlighted ? "#FF6B35" : "#1E1E1E"}
+                    strokeWidth={isHighlighted ? "4" : isHovered ? "3" : "1"}
+                    className="cursor-pointer transition-all duration-300"
+                    onClick={() => handleBuildingClick(buildingId)}
+                    onMouseEnter={() => handleBuildingHover(buildingId)}
+                    onMouseLeave={handleBuildingLeave}
+                    style={{
+                      filter: isHighlighted ? 'drop-shadow(0px 0px 8px rgba(255, 107, 53, 0.6))' : 'none'
+                    }}
+                  />
+                </g>
+              );
+            })}
           </g>
 
           {/* Building Labels - only show when zoomed in enough */}

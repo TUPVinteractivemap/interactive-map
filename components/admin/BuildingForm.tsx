@@ -22,6 +22,8 @@ export function BuildingForm({ building, onSubmit, onCancel, isSubmitting }: Bui
     description: building?.description || '',
     type: building?.type || '',
     pathData: building?.pathData || '',
+    imageUrl: building?.imageUrl || '',
+    floors: building?.floors || 1, // Preserve floors field
   });
 
   // Convert input to valid ID format
@@ -116,6 +118,42 @@ export function BuildingForm({ building, onSubmit, onCancel, isSubmitting }: Bui
           className="font-mono text-sm"
           rows={4}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="imageUrl">Building Image URL</Label>
+        <Input
+          id="imageUrl"
+          value={formData.imageUrl}
+          onChange={(e) => {
+            let url = e.target.value.trim();
+            
+            // Convert regular Imgur URLs to direct image URLs
+            if (url.includes('imgur.com/a/')) {
+              // Extract ID from album URL
+              const id = url.split('/a/')[1]?.split(/[^a-zA-Z0-9]/)[0];
+              if (id) {
+                url = `https://i.imgur.com/${id}.jpg`;
+              }
+            } else if (url.includes('imgur.com/')) {
+              // Extract ID from regular Imgur URL
+              const id = url.split('imgur.com/')[1]?.split(/[^a-zA-Z0-9]/)[0];
+              if (id) {
+                url = `https://i.imgur.com/${id}.jpg`;
+              }
+            }
+            
+            // Only accept direct Imgur URLs or empty string
+            if (url === '' || url.startsWith('https://i.imgur.com/')) {
+              setFormData(prev => ({ ...prev, imageUrl: url }));
+            }
+          }}
+          placeholder="Imgur direct image URL (e.g., https://i.imgur.com/abcd123.jpg)"
+          className="font-mono text-sm"
+        />
+        <p className="text-xs text-gray-500">
+          Paste any Imgur URL - it will be automatically converted to the correct format. You can paste an album URL, image page URL, or direct image URL.
+        </p>
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">

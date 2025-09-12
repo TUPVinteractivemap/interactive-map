@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BuildingInfo } from '@/lib/buildings';
+import { Room } from '@/lib/rooms';
 import { Button } from '@/components/ui/button';
 import { BuildingForm } from '@/components/admin/BuildingForm';
+import { RoomForm } from '@/components/admin/RoomForm';
+import { RoomList } from '@/components/admin/RoomList';
 import {
   Dialog,
   DialogContent,
@@ -12,11 +15,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, addDoc } from 'firebase/firestore';
 import { adminDb } from '@/lib/adminAuth';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Edit, Trash2, LogOut, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, LogOut, ArrowLeft, DoorClosed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,13 +28,19 @@ export default function MapEditor() {
   const router = useRouter();
   const { adminSignOut } = useAdminAuth();
   const [buildings, setBuildings] = useState<BuildingInfo[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'buildings' | 'rooms'>('buildings');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
+  const [showEditRoomDialog, setShowEditRoomDialog] = useState(false);
+  const [showDeleteRoomDialog, setShowDeleteRoomDialog] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -46,13 +55,14 @@ export default function MapEditor() {
     }
   };
 
-  // Fetch and listen to buildings
+  // Fetch and listen to buildings and rooms
   useEffect(() => {
-    console.log('Setting up real-time buildings listener...');
+    console.log('Setting up real-time data listeners...');
     setLoading(true);
 
+    // Buildings listener
     const buildingsRef = collection(adminDb, 'buildings');
-    const unsubscribe = onSnapshot(buildingsRef, 
+    const buildingsUnsubscribe = onSnapshot(buildingsRef, 
       (snapshot) => {
         const buildingsList = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -60,19 +70,37 @@ export default function MapEditor() {
         })) as BuildingInfo[];
         console.log('Real-time buildings update:', buildingsList.length, 'buildings');
         setBuildings(buildingsList);
-        setLoading(false);
       },
       (error) => {
         console.error('Error in buildings listener:', error);
         toast.error('Failed to load buildings');
+      }
+    );
+
+    // Rooms listener
+    const roomsRef = collection(adminDb, 'rooms');
+    const roomsUnsubscribe = onSnapshot(roomsRef,
+      (snapshot) => {
+        const roomsList = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Room[];
+        console.log('Real-time rooms update:', roomsList.length, 'rooms');
+        setRooms(roomsList);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error in rooms listener:', error);
+        toast.error('Failed to load rooms');
         setLoading(false);
       }
     );
 
-    // Cleanup listener on unmount
+    // Cleanup listeners on unmount
     return () => {
-      console.log('Cleaning up buildings listener');
-      unsubscribe();
+      console.log('Cleaning up data listeners');
+      buildingsUnsubscribe();
+      roomsUnsubscribe();
     };
   }, []);
 
@@ -152,6 +180,59 @@ export default function MapEditor() {
     }
   };
 
+  // Add room
+  const handleAddRoom = async (roomData: Partial<Room>) => {
+    setIsSubmitting(true);
+    try {
+      const roomsRef = collection(adminDb, 'rooms');
+      await addDoc(roomsRef, {
+        ...roomData,
+        tags: roomData.tags || [],
+      });
+      toast.success('Room added successfully');
+      setShowAddRoomDialog(false);
+    } catch (error) {
+      console.error('Error adding room:', error);
+      toast.error('Failed to add room');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Update room
+  const handleUpdateRoom = async (roomData: Partial<Room>) => {
+    if (!selectedRoom) return;
+    setIsSubmitting(true);
+    try {
+      const roomRef = doc(adminDb, 'rooms', selectedRoom.id);
+      await updateDoc(roomRef, roomData);
+      toast.success('Room updated successfully');
+      setShowEditRoomDialog(false);
+    } catch (error) {
+      console.error('Error updating room:', error);
+      toast.error('Failed to update room');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Delete room
+  const handleDeleteRoom = async () => {
+    if (!selectedRoom) return;
+    setIsSubmitting(true);
+    try {
+      const roomRef = doc(adminDb, 'rooms', selectedRoom.id);
+      await deleteDoc(roomRef);
+      toast.success('Room deleted successfully');
+      setShowDeleteRoomDialog(false);
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      toast.error('Failed to delete room');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -214,10 +295,20 @@ export default function MapEditor() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <Button onClick={() => setShowAddDialog(true)} className="bg-red-500 hover:bg-red-600">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Building
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setSelectedBuilding(null);
+                        setShowAddRoomDialog(true);
+                      }} 
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      <DoorClosed className="mr-2 h-4 w-4" />
+                      Add Room
                     </Button>
                   </div>
                 </div>
@@ -228,56 +319,105 @@ export default function MapEditor() {
           {/* Content */}
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-3 sm:p-6">
-                <div className="relative mb-6">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <Input
-                    type="text"
-                    placeholder="Search buildings..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+              <div className="border-b">
+                <div className="flex">
+                  <button
+                    className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                      activeTab === 'buildings'
+                        ? 'border-red-500 text-red-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                    onClick={() => setActiveTab('buildings')}
+                  >
+                    Buildings
+                  </button>
+                  <button
+                    className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                      activeTab === 'rooms'
+                        ? 'border-red-500 text-red-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                    onClick={() => setActiveTab('rooms')}
+                  >
+                    Rooms
+                  </button>
                 </div>
+              </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredBuildings.map((building) => (
-                    <Card key={building.id}>
-                      <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                          <span>{building.name}</span>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedBuilding(building);
-                                setShowEditDialog(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedBuilding(building);
-                                setShowDeleteDialog(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-xs font-mono text-gray-500 mb-2">ID: {building.id}</p>
-                        <p className="text-sm text-gray-600">{building.description}</p>
-                        <p className="text-sm text-gray-500 mt-2">Type: {building.type}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+              <div className="p-3 sm:p-6">
+                {activeTab === 'buildings' ? (
+                  <>
+                    <div className="relative mb-6">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Input
+                        type="text"
+                        placeholder="Search buildings..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {filteredBuildings.map((building) => (
+                        <Card key={building.id}>
+                          <CardHeader>
+                            <CardTitle className="flex justify-between items-center">
+                              <span>{building.name}</span>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedBuilding(building);
+                                    setShowEditDialog(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedBuilding(building);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-xs font-mono text-gray-500 mb-2">ID: {building.id}</p>
+                            <p className="text-sm text-gray-600">{building.description}</p>
+                            <p className="text-sm text-gray-500 mt-2">Type: {building.type}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <RoomList
+                    rooms={rooms}
+                    buildings={buildings}
+                    onAddRoom={(buildingId) => {
+                      const building = buildings.find(b => b.id === buildingId);
+                      if (building) {
+                        setSelectedBuilding(building);
+                        setShowAddRoomDialog(true);
+                      }
+                    }}
+                    onEditRoom={(room) => {
+                      setSelectedRoom(room);
+                      setShowEditRoomDialog(true);
+                    }}
+                    onDeleteRoom={(room) => {
+                      setSelectedRoom(room);
+                      setShowDeleteRoomDialog(true);
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -331,6 +471,63 @@ export default function MapEditor() {
             <Button
               variant="destructive"
               onClick={handleDeleteBuilding}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Room Dialog */}
+      <Dialog open={showAddRoomDialog} onOpenChange={setShowAddRoomDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Room</DialogTitle>
+          </DialogHeader>
+          <RoomForm
+            buildings={buildings}
+            onSubmit={handleAddRoom}
+            onCancel={() => setShowAddRoomDialog(false)}
+            isSubmitting={isSubmitting}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Room Dialog */}
+      <Dialog open={showEditRoomDialog} onOpenChange={setShowEditRoomDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Room</DialogTitle>
+          </DialogHeader>
+          <RoomForm
+            room={selectedRoom || undefined}
+            buildings={buildings}
+            onSubmit={handleUpdateRoom}
+            onCancel={() => setShowEditRoomDialog(false)}
+            isSubmitting={isSubmitting}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Room Dialog */}
+      <Dialog open={showDeleteRoomDialog} onOpenChange={setShowDeleteRoomDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Room</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete {selectedRoom?.name}?</p>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteRoomDialog(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRoom}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Deleting...' : 'Delete'}
