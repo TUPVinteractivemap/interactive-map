@@ -255,25 +255,25 @@ export function HistoryProvider({ children }: { children: ReactNode }) {
 
   // Load data when user changes
   useEffect(() => {
+    // Always clear state first when user changes to prevent stale data
+    setState({
+      history: [],
+      routes: [],
+      buildingSearches: [],
+      roomSearches: [],
+      groupedHistory: {},
+      loading: false,
+      loadingRoutes: false,
+      loadingBuildingSearches: false,
+      loadingRoomSearches: false,
+      error: null
+    });
+
     if (user?.uid) {
       refreshHistory();
       refreshRoutes();
       refreshBuildingSearches();
       refreshRoomSearches();
-    } else {
-      // Clear data when user logs out
-      setState({
-        history: [],
-        routes: [],
-        buildingSearches: [],
-        roomSearches: [],
-        groupedHistory: {},
-        loading: false,
-        loadingRoutes: false,
-        loadingBuildingSearches: false,
-        loadingRoomSearches: false,
-        error: null
-      });
     }
   }, [user?.uid]);
 

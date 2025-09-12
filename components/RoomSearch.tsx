@@ -4,17 +4,12 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { searchRooms } from '@/lib/rooms';
 import type { Room } from '@/lib/rooms';
-import { logRoomSearch } from '@/lib/userHistory';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useHistoryContext } from '@/contexts/HistoryContext';
 
 interface RoomSearchProps {
   onRoomSelect: (room: Room) => void;
 }
 
 export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
-  const { user } = useAuthContext();
-  const { refreshRoomSearches } = useHistoryContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<Room[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -26,32 +21,12 @@ export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
     try {
       const rooms = await searchRooms(searchTerm);
       setResults(rooms);
-
-      // Log room search to user history
-      if (user?.uid && rooms.length > 0) {
-        try {
-          // Log the first result as representative of the search
-          const firstRoom = rooms[0];
-          await logRoomSearch(
-            user.uid,
-            firstRoom.id,
-            firstRoom.name,
-            firstRoom.buildingId,
-            firstRoom.buildingName || 'Unknown Building',
-            searchTerm
-          );
-          // Refresh room searches to update the UI
-          await refreshRoomSearches();
-        } catch (error) {
-          console.error('❌ Failed to log room search:', error);
-        }
-      }
     } catch (error) {
       console.error('Error searching rooms:', error);
     } finally {
       setIsSearching(false);
     }
-  }, [searchTerm, user?.uid, refreshRoomSearches]);
+  }, [searchTerm]);
 
   return (
     <div className="space-y-4">
@@ -74,26 +49,7 @@ export function RoomSearch({ onRoomSelect }: RoomSearchProps) {
             <Card
               key={room.id}
               className="p-4 cursor-pointer hover:bg-gray-50"
-              onClick={async () => {
-                onRoomSelect(room);
-
-                // Log individual room selection to user history
-                if (user?.uid) {
-                  try {
-                    await logRoomSearch(
-                      user.uid,
-                      room.id,
-                      room.name,
-                      room.buildingId,
-                      room.buildingName || 'Unknown Building'
-                    );
-                    // Refresh room searches to update the UI
-                    await refreshRoomSearches();
-                  } catch (error) {
-                    console.error('❌ Failed to log room selection:', error);
-                  }
-                }
-              }}
+              onClick={() => onRoomSelect(room)}
             >
               <h3 className="font-medium">{room.name}</h3>
               <p className="text-sm text-gray-600">Floor {room.floor}</p>

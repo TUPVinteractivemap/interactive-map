@@ -32,7 +32,7 @@ export default function InteractiveMap({
   showLabels: externalShowLabels
 }: InteractiveMapProps) {
   const { user } = useAuthContext();
-  const { refreshRoutes } = useHistoryContext();
+  const { refreshRoutes, refreshHistory } = useHistoryContext();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<Array<{ x: number; y: number }>>([]);
@@ -262,8 +262,9 @@ export default function InteractiveMap({
               buildings[destination].name,
               route
             );
-            // Refresh routes to update the UI
+            // Refresh both routes and history to update the UI
             await refreshRoutes();
+            await refreshHistory();
           } catch (error) {
             console.error('❌ Failed to log route navigation:', error);
           }
@@ -274,7 +275,8 @@ export default function InteractiveMap({
     };
 
     loadRoute();
-  }, [origin, destination, user?.uid, buildings, refreshRoutes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin, destination, user?.uid, buildings]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
