@@ -988,7 +988,9 @@ export default function MapPage() {
 
       {/* Details Sidebar (Desktop) */}
       {(selectedBuilding || selectedRoom) && (
-        <div className="hidden lg:flex flex-col border-r bg-white w-[400px] relative z-50">
+        <div className={`hidden lg:flex flex-col border-r bg-white w-[400px] relative z-50 h-screen ${
+          !isDesktopSidebarOpen ? 'md:absolute md:left-0' : ''
+        }`}>
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Header with close button */}
             <div className="flex justify-between items-center p-4 border-b">
