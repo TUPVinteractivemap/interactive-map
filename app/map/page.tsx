@@ -913,13 +913,27 @@ export default function MapPage() {
                         </div>
                       </div>
 
-                      {/* Search Button */}
-                      <button
-                        type="submit"
-                        className="w-full bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
-                      >
-                        Find Route
-                      </button>
+                      {/* Search Button and Clear Route */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
+                        >
+                          Find Route
+                        </button>
+                        {origin && destination && origin !== destination && (
+                          <button
+                            onClick={handleClearRoute}
+                            type="button"
+                            className="w-12 h-12 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center"
+                            title="End Route"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
 
                       {/* Route Summary */}
                       <div className="rounded-xl border bg-gradient-to-b from-white to-gray-50/50 p-4 text-sm flex items-start gap-3 shadow-sm">
@@ -1061,19 +1075,7 @@ export default function MapPage() {
       <div className="fixed inset-0 md:static md:flex-1 bg-white overflow-hidden">
         {/* Unified Map Controls */}
         <div className="absolute top-6 right-6 md:top-4 md:right-4 z-10 flex flex-col gap-2">
-          {/* Full Map View Toggle (Desktop Only) */}
-          {isDesktopSidebarOpen && (
-            <button
-              onClick={() => setIsDesktopSidebarOpen(false)}
-              className="hidden md:flex w-auto px-3 py-2 bg-white rounded-lg shadow-lg items-center justify-center hover:bg-gray-50 transition-colors gap-2 group"
-              title="Full Map View"
-            >
-              <svg className="w-4 h-4 text-gray-700 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-              <span className="text-xs font-medium text-gray-700 group-hover:text-red-600 transition-colors">Full View</span>
-            </button>
-          )}
+          {/* Map controls start with zoom */}
 
           {/* Zoom Controls */}
           <button
@@ -1136,18 +1138,7 @@ export default function MapPage() {
             </svg>
           </button>
 
-          {/* Clear Route Button - Only shown when route is active */}
-          {origin && destination && origin !== destination && (
-            <button
-              onClick={handleClearRoute}
-              className="w-10 h-10 bg-red-500 text-white rounded-lg shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors"
-              title="Clear Route"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+          {/* No clear route button in map controls anymore */}
         </div>
 
         {/* Floor Level Filter Dropdown - Now positioned relative to the button */}
