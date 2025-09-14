@@ -10,7 +10,8 @@ export interface Room {
   floor: number;
   description?: string;
   tags: string[];
-  imageUrl?: string; // Optional Imgur URL for room image
+  images: string[]; // Array of image URLs (max 3)
+  imageUrl?: string; // Optional main image URL
 }
 
 const ROOMS_COLLECTION = 'rooms';

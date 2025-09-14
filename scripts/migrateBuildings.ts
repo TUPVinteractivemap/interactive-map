@@ -62,7 +62,9 @@ async function migrateBuildings() {
         type: b.type,
         pathData: b.svgPath,
         center,
-        floors: 1, // Default to 1 floor, adjust as needed
+        floors: b.floors ?? 1, // Use provided floors or default to 1
+        images: [],
+        imageUrl: ''
       });
       console.log(`Migrated: ${b.name}`);
     } catch (e) {

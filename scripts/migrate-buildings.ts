@@ -40,144 +40,174 @@ const buildingPaths: Record<string, string> = {
 const buildingData: Record<string, BuildingInfo> = {
   // Academic Zone
   ModernTechnologyBldg: {
-    id: 'ModernTechnologyBldg',
-    name: 'Modern Technology Building',
-    description: 'The Modern Technology Building is a new addition to the facilities and buildings of the University. It is located near the exit and has three floors.',
-    type: 'Academic',
-    pathData: buildingPaths.ModernTechnologyBldg,
-    center: calculatePathCenter(buildingPaths.ModernTechnologyBldg),
-    floors: 3
+  id: 'ModernTechnologyBldg',
+  name: 'Modern Technology Building',
+  description: 'The Modern Technology Building is a new addition to the facilities and buildings of the University. It is located near the exit and has three floors.',
+  type: 'Academic',
+  pathData: buildingPaths.ModernTechnologyBldg,
+  center: calculatePathCenter(buildingPaths.ModernTechnologyBldg),
+  floors: 3,
+  images: [],
+  imageUrl: ''
   },
   MechanicalTechnologyBldg: {
-    id: 'MechanicalTechnologyBldg',
-    name: 'Mechanical Technology Building',
-    description: 'The Mechanical Technology Building offers machineries and offices for faculty members and students taking Manufacturing Engineering Technology. Manufacturing Rooms can be found here.',
-    type: 'Academic',
-    pathData: buildingPaths.MechanicalTechnologyBldg,
-    center: calculatePathCenter(buildingPaths.MechanicalTechnologyBldg),
-    floors: 2
+  id: 'MechanicalTechnologyBldg',
+  name: 'Mechanical Technology Building',
+  description: 'The Mechanical Technology Building offers machineries and offices for faculty members and students taking Manufacturing Engineering Technology. Manufacturing Rooms can be found here.',
+  type: 'Academic',
+  pathData: buildingPaths.MechanicalTechnologyBldg,
+  center: calculatePathCenter(buildingPaths.MechanicalTechnologyBldg),
+  floors: 2,
+  images: [],
+  imageUrl: ''
   },
   AutoRefrigirationAirconTechnologyBldf: {
-    id: 'AutoRefrigirationAirconTechnologyBldf',
-    name: 'Automotive & Refrigeration and Air-Condition Technology Building',
-    description: 'The Automotive & Refrigeration and Air-Condition Technology Building provides HVAR-R rooms for students under their course. Faculty Rooms can also be found here.',
-    type: 'Academic',
-    pathData: buildingPaths.AutoRefrigirationAirconTechnologyBldf,
-    center: calculatePathCenter(buildingPaths.AutoRefrigirationAirconTechnologyBldf),
-    floors: 2
+  id: 'AutoRefrigirationAirconTechnologyBldf',
+  name: 'Automotive & Refrigeration and Air-Condition Technology Building',
+  description: 'The Automotive & Refrigeration and Air-Condition Technology Building provides HVAR-R rooms for students under their course. Faculty Rooms can also be found here.',
+  type: 'Academic',
+  pathData: buildingPaths.AutoRefrigirationAirconTechnologyBldf,
+  center: calculatePathCenter(buildingPaths.AutoRefrigirationAirconTechnologyBldf),
+  floors: 2,
+  images: [],
+  imageUrl: ''
   },
   TwoStoreyTrainingInnovationChineseChamberBldg: {
-    id: 'TwoStoreyTrainingInnovationChineseChamberBldg',
-    name: 'Two-Storey Training Innovation & Chinese Chamber Building',
-    description: 'The Two-Storey Training Innovation & Chinese Chamber Building is a training facility and innovation center. It is located near the main entrance.',
-    type: 'Academic',
-    pathData: buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg,
-    center: calculatePathCenter(buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg),
-    floors: 2
+  id: 'TwoStoreyTrainingInnovationChineseChamberBldg',
+  name: 'Two-Storey Training Innovation & Chinese Chamber Building',
+  description: 'The Two-Storey Training Innovation & Chinese Chamber Building is a training facility and innovation center. It is located near the main entrance.',
+  type: 'Academic',
+  pathData: buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg,
+  center: calculatePathCenter(buildingPaths.TwoStoreyTrainingInnovationChineseChamberBldg),
+  floors: 2,
+  images: [],
+  imageUrl: ''
   },
   EngineeringExtensionBldg: {
-    id: 'EngineeringExtensionBldg',
-    name: 'Engineering Building Extension',
-    description: 'MECHANICAL ENGINEERING ROOMS WILL BE FOUND IN THIS AREA LABELED AS EEB ROOMS',
-    type: 'Academic',
-    pathData: buildingPaths.EngineeringExtensionBldg,
-    center: calculatePathCenter(buildingPaths.EngineeringExtensionBldg),
-    floors: 2
+  id: 'EngineeringExtensionBldg',
+  name: 'Engineering Building Extension',
+  description: 'MECHANICAL ENGINEERING ROOMS WILL BE FOUND IN THIS AREA LABELED AS EEB ROOMS',
+  type: 'Academic',
+  pathData: buildingPaths.EngineeringExtensionBldg,
+  center: calculatePathCenter(buildingPaths.EngineeringExtensionBldg),
+  floors: 2,
+  images: [],
+  imageUrl: ''
   },
   ElectricalTechnologyBldg: {
-    id: 'ElectricalTechnologyBldg',
-    name: 'Electrical Technology Building',
-    description: 'ELECTRICAL ENGINEERING TECHNOLOGY BUILDING CONSISTS OF ROOMS AND OFFICES FOR ELECTRICAL TECHNOLOGY STUDENTS AND FACULTY',
-    type: 'Academic',
-    pathData: buildingPaths.ElectricalTechnologyBldg,
-    center: calculatePathCenter(buildingPaths.ElectricalTechnologyBldg),
-    floors: 2
+  id: 'ElectricalTechnologyBldg',
+  name: 'Electrical Technology Building',
+  description: 'ELECTRICAL ENGINEERING TECHNOLOGY BUILDING CONSISTS OF ROOMS AND OFFICES FOR ELECTRICAL TECHNOLOGY STUDENTS AND FACULTY',
+  type: 'Academic',
+  pathData: buildingPaths.ElectricalTechnologyBldg,
+  center: calculatePathCenter(buildingPaths.ElectricalTechnologyBldg),
+  floors: 2,
+  images: [],
+  imageUrl: ''
   },
   EngineeringBldg: {
-    id: 'EngineeringBldg',
-    name: 'Engineering Building',
-    description: 'ENGINEERING BUILDING CONSISTS OF ROOMS AND OFFICES FOR ENGINEERING STUDENTS AND FACULTY',
-    type: 'Academic',
-    pathData: buildingPaths.EngineeringBldg,
-    center: calculatePathCenter(buildingPaths.EngineeringBldg),
-    floors: 3
+  id: 'EngineeringBldg',
+  name: 'Engineering Building',
+  description: 'ENGINEERING BUILDING CONSISTS OF ROOMS AND OFFICES FOR ENGINEERING STUDENTS AND FACULTY',
+  type: 'Academic',
+  pathData: buildingPaths.EngineeringBldg,
+  center: calculatePathCenter(buildingPaths.EngineeringBldg),
+  floors: 3,
+  images: [],
+  imageUrl: ''
   },
   // Conservation Zone
   Garden: {
-    id: 'Garden',
-    name: 'Garden',
-    description: 'Landscaped garden area',
-    type: 'Conservation',
-    pathData: buildingPaths.Garden,
-    center: calculatePathCenter(buildingPaths.Garden),
-    floors: 0
+  id: 'Garden',
+  name: 'Garden',
+  description: 'Landscaped garden area',
+  type: 'Conservation',
+  pathData: buildingPaths.Garden,
+  center: calculatePathCenter(buildingPaths.Garden),
+  floors: 0,
+  images: [],
+  imageUrl: ''
   },
   // Multipurpose Activity Zone
   MultiPurposeHall: {
-    id: 'MultiPurposeHall',
-    name: 'TUPV Gymnasium',
-    description: 'TUPV Gymnasium for physical education and sports activities',
-    type: 'Multipurpose',
-    pathData: buildingPaths.MultiPurposeHall,
-    center: calculatePathCenter(buildingPaths.MultiPurposeHall),
-    floors: 1
+  id: 'MultiPurposeHall',
+  name: 'TUPV Gymnasium',
+  description: 'TUPV Gymnasium for physical education and sports activities',
+  type: 'Multipurpose',
+  pathData: buildingPaths.MultiPurposeHall,
+  center: calculatePathCenter(buildingPaths.MultiPurposeHall),
+  floors: 1,
+  images: [],
+  imageUrl: ''
   },
   // IGP Facilities
   EnterpriseCenter: {
-    id: 'EnterpriseCenter',
-    name: 'Enterprise Center',
-    description: 'Enterprise development and business center',
-    type: 'IGP',
-    pathData: buildingPaths.EnterpriseCenter,
-    center: calculatePathCenter(buildingPaths.EnterpriseCenter),
-    floors: 2
+  id: 'EnterpriseCenter',
+  name: 'Enterprise Center',
+  description: 'Enterprise development and business center',
+  type: 'IGP',
+  pathData: buildingPaths.EnterpriseCenter,
+  center: calculatePathCenter(buildingPaths.EnterpriseCenter),
+  floors: 2,
+  images: [],
+  imageUrl: ''
   },
   Canteen: {
-    id: 'Canteen',
-    name: 'Canteen',
-    description: 'STUDENTS, FACULTY, VISITORS AND STAFFS OF TUPV CAN PURCHASE THEIR LUNCHES AND SNACKS HERE. ALSO, THE LOCATION HAS TABLES AND CHAIRS WHERE THEY CAN DINE IN. THIS AREA IS NEAR THE ENTRANCE OR MAIN GATE OF TUPV',
-    type: 'IGP',
-    pathData: buildingPaths.Canteen,
-    center: calculatePathCenter(buildingPaths.Canteen),
-    floors: 1
+  id: 'Canteen',
+  name: 'Canteen',
+  description: 'STUDENTS, FACULTY, VISITORS AND STAFFS OF TUPV CAN PURCHASE THEIR LUNCHES AND SNACKS HERE. ALSO, THE LOCATION HAS TABLES AND CHAIRS WHERE THEY CAN DINE IN. THIS AREA IS NEAR THE ENTRANCE OR MAIN GATE OF TUPV',
+  type: 'IGP',
+  pathData: buildingPaths.Canteen,
+  center: calculatePathCenter(buildingPaths.Canteen),
+  floors: 1,
+  images: [],
+  imageUrl: ''
   },
   TUPVDormitory: {
-    id: 'TUPVDormitory',
-    name: 'TUPV Dormitory',
-    description: 'Student dormitory and housing',
-    type: 'IGP',
-    pathData: buildingPaths.TUPVDormitory,
-    center: calculatePathCenter(buildingPaths.TUPVDormitory),
-    floors: 3
+  id: 'TUPVDormitory',
+  name: 'TUPV Dormitory',
+  description: 'Student dormitory and housing',
+  type: 'IGP',
+  pathData: buildingPaths.TUPVDormitory,
+  center: calculatePathCenter(buildingPaths.TUPVDormitory),
+  floors: 3,
+  images: [],
+  imageUrl: ''
   },
   // Utilities Zone
   PPGSOffice: {
-    id: 'PPGSOffice',
-    name: 'PPGS Office',
-    description: 'OFFICES',
-    type: 'Utilities',
-    pathData: buildingPaths.PPGSOffice,
-    center: calculatePathCenter(buildingPaths.PPGSOffice),
-    floors: 1
+  id: 'PPGSOffice',
+  name: 'PPGS Office',
+  description: 'OFFICES',
+  type: 'Utilities',
+  pathData: buildingPaths.PPGSOffice,
+  center: calculatePathCenter(buildingPaths.PPGSOffice),
+  floors: 1,
+  images: [],
+  imageUrl: ''
   },
   PowerHouse: {
-    id: 'PowerHouse',
-    name: 'Power House',
-    description: 'Power generation and electrical facilities',
-    type: 'Utilities',
-    pathData: buildingPaths.PowerHouse,
-    center: calculatePathCenter(buildingPaths.PowerHouse),
-    floors: 1
+  id: 'PowerHouse',
+  name: 'Power House',
+  description: 'Power generation and electrical facilities',
+  type: 'Utilities',
+  pathData: buildingPaths.PowerHouse,
+  center: calculatePathCenter(buildingPaths.PowerHouse),
+  floors: 1,
+  images: [],
+  imageUrl: ''
   },
   // Security
   GuardHouseMain: {
-    id: 'GuardHouseMain',
-    name: 'Guard House',
-    description: 'THE GUARD HOUSE OF TUPV WHERE CAMPUS\' GUARDS ARE STATIONED',
-    type: 'Security',
-    pathData: buildingPaths.GuardHouseMain,
-    center: calculatePathCenter(buildingPaths.GuardHouseMain),
-    floors: 1
+  id: 'GuardHouseMain',
+  name: 'Guard House',
+  description: 'THE GUARD HOUSE OF TUPV WHERE CAMPUS\' GUARDS ARE STATIONED',
+  type: 'Security',
+  pathData: buildingPaths.GuardHouseMain,
+  center: calculatePathCenter(buildingPaths.GuardHouseMain),
+  floors: 1,
+  images: [],
+  imageUrl: ''
   }
 };
 

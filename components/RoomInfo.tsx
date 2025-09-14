@@ -1,5 +1,6 @@
 import { Room } from '@/lib/rooms';
 import { BuildingInfo } from '@/lib/buildings';
+import { ImageCarousel } from '@/components/ui/image-carousel';
 
 interface RoomInfoProps {
   room: Room;
@@ -31,6 +32,12 @@ export function RoomInfo({ room, building, onClose }: RoomInfoProps) {
           </svg>
         </button>
       </div>
+
+      {room.images?.length > 0 && (
+        <div className="mb-4 h-48">
+          <ImageCarousel images={room.images} className="h-full" />
+        </div>
+      )}
 
       <div className="space-y-4">
         <div>

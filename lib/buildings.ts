@@ -12,7 +12,8 @@ export interface BuildingInfo {
     y: number;
   };
   floors: number; // Number of floors in the building
-  imageUrl?: string; // Optional Imgur URL for building image
+  images: string[]; // Array of image URLs (max 3)
+  imageUrl?: string; // Optional main image URL
 }
 
 const BUILDINGS_COLLECTION = 'buildings';

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot, doc, deleteDoc, Timestamp, query } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp, query } from 'firebase/firestore';
 import { adminDb } from '@/lib/adminAuth';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,6 +96,8 @@ export default function UsersManagement() {
     user.studentId?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const { user } = useAdminAuth();
+  
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
@@ -103,14 +105,32 @@ export default function UsersManagement() {
       setLoading(true);
       console.log('Deleting user:', selectedUser.id);
 
-      // Delete from Firestore
-      await deleteDoc(doc(adminDb, 'users', selectedUser.id));
+      if (!user) {
+        throw new Error('Admin not authenticated');
+      }
+
+      // Call the API endpoint to delete the user
+      const response = await fetch('/api/admin/deleteUser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uid: selectedUser.id,
+          adminUid: user.uid,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete user');
+      }
       
       toast.success('User deleted successfully');
       setShowDeleteDialog(false);
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
     } finally {
       setLoading(false);
     }

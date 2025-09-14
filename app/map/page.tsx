@@ -1,8 +1,9 @@
 'use client';
 
-/* eslint-disable react-hooks/rules-of-hooks */
+
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { ImageCarousel } from '@/components/ui/image-carousel';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -44,7 +45,7 @@ export default function MapPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const { refreshRoomSearches, refreshBuildingSearches, refreshHistory } = useHistoryContext();
+  const { refreshRoomSearches, refreshBuildingSearches } = useHistoryContext();
 
   // Handle click outside for logout confirmation
   useEffect(() => {
@@ -249,9 +250,8 @@ export default function MapPage() {
           buildingName,
           searchQuery.trim() || undefined
         );
-        // Refresh room searches and main history in history context
+        // Refresh room searches in history context
         await refreshRoomSearches();
-        await refreshHistory();
       } catch (error) {
         console.error('❌ Failed to log room selection:', error);
       }
@@ -281,9 +281,8 @@ export default function MapPage() {
           building.name,
           buildingSearchQuery.trim() || undefined
         );
-        // Refresh building searches and main history to update the UI
+        // Refresh building searches to update the UI
         await refreshBuildingSearches();
-        await refreshHistory();
       } catch (error) {
         console.error('❌ Failed to log building selection:', error);
       }
@@ -914,25 +913,13 @@ export default function MapPage() {
                         </div>
                       </div>
 
-                      {/* Route Action Buttons */}
-                      <div className="flex gap-3">
-                        <button
-                          type="submit"
-                          className="flex-1 bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
-                        >
-                          Find Route
-                        </button>
-                        {isValidRoute && (
-                          <button
-                            type="button"
-                            onClick={handleClearRoute}
-                            className="bg-gray-500 text-white py-3 px-4 rounded-xl hover:bg-gray-600 transition-colors font-semibold shadow-sm"
-                            title="End Route"
-                          >
-                            End Route
-                          </button>
-                        )}
-                      </div>
+                      {/* Search Button */}
+                      <button
+                        type="submit"
+                        className="w-full bg-red-500 text-white py-3 px-4 rounded-xl hover:bg-red-600 transition-colors font-semibold shadow-sm"
+                      >
+                        Find Route
+                      </button>
 
                       {/* Route Summary */}
                       <div className="rounded-xl border bg-gradient-to-b from-white to-gray-50/50 p-4 text-sm flex items-start gap-3 shadow-sm">
@@ -1022,84 +1009,12 @@ export default function MapPage() {
             {/* Content */}
             <div className="flex-1 flex flex-col">
               <div className="w-full h-48 bg-gray-200 relative overflow-hidden">
-                {selectedRoom ? (
-                  selectedRoom.imageUrl ? (
-                    <>
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-room-${selectedRoom.id}`}>
-                        <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                      </div>
-                      <Image
-                        src={selectedRoom.imageUrl}
-                        alt={`Photo of ${selectedRoom.name}`}
-                        fill
-                        className="object-cover opacity-0 transition-opacity duration-300"
-                        onError={(e) => {
-                          // Hide the image and loading state on error
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const loadingDiv = document.getElementById(`loading-room-${selectedRoom.id}`);
-                          if (loadingDiv) loadingDiv.style.display = 'none';
-                          // Show error message
-                          const parent = target.parentElement;
-                          if (parent) {
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
-                            errorDiv.innerHTML = 'Failed to load image';
-                            parent.appendChild(errorDiv);
-                          }
-                        }}
-                        onLoad={(e) => {
-                          // Show the image and hide loading state
-                          const target = e.target as HTMLImageElement;
-                          target.classList.remove('opacity-0');
-                          const loadingDiv = document.getElementById(`loading-room-${selectedRoom.id}`);
-                          if (loadingDiv) loadingDiv.classList.add('opacity-0');
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      Room photo placeholder
-                    </div>
-                  )
-                ) : selectedBuilding?.imageUrl ? (
-                  <>
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-${selectedBuilding.id}`}>
-                      <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                    </div>
-                    <Image
-                      src={selectedBuilding.imageUrl}
-                      alt={`Photo of ${selectedBuilding.name}`}
-                      fill
-                      className="object-cover opacity-0 transition-opacity duration-300"
-                      onError={(e) => {
-                        // Hide the image and loading state on error
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
-                        if (loadingDiv) loadingDiv.style.display = 'none';
-                        // Show error message
-                        const parent = target.parentElement;
-                        if (parent) {
-                          const errorDiv = document.createElement('div');
-                          errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
-                          errorDiv.innerHTML = 'Failed to load image';
-                          parent.appendChild(errorDiv);
-                        }
-                      }}
-                      onLoad={(e) => {
-                        // Show the image and hide loading state
-                        const target = e.target as HTMLImageElement;
-                        target.classList.remove('opacity-0');
-                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
-                        if (loadingDiv) loadingDiv.classList.add('opacity-0');
-                      }}
-                    />
-                  </>
+                {selectedRoom && (selectedRoom.imageUrl || selectedRoom.images?.length > 0) ? (
+                  <ImageCarousel images={[...(selectedRoom.imageUrl ? [selectedRoom.imageUrl] : []), ...(selectedRoom.images || [])]} className="w-full h-full" />
+                ) : selectedBuilding && (selectedBuilding.imageUrl || selectedBuilding.images?.length > 0) ? (
+                  <ImageCarousel images={[...(selectedBuilding.imageUrl ? [selectedBuilding.imageUrl] : []), ...(selectedBuilding.images || [])]} className="w-full h-full" />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    Building photo placeholder
-                  </div>
+                  <div className="flex items-center justify-center h-full text-gray-500">No images available</div>
                 )}
               </div>
               <div className="p-4">
@@ -1146,6 +1061,20 @@ export default function MapPage() {
       <div className="fixed inset-0 md:static md:flex-1 bg-white overflow-hidden">
         {/* Unified Map Controls */}
         <div className="absolute top-6 right-6 md:top-4 md:right-4 z-10 flex flex-col gap-2">
+          {/* Full Map View Toggle (Desktop Only) */}
+          {isDesktopSidebarOpen && (
+            <button
+              onClick={() => setIsDesktopSidebarOpen(false)}
+              className="hidden md:flex w-auto px-3 py-2 bg-white rounded-lg shadow-lg items-center justify-center hover:bg-gray-50 transition-colors gap-2 group"
+              title="Full Map View"
+            >
+              <svg className="w-4 h-4 text-gray-700 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              <span className="text-xs font-medium text-gray-700 group-hover:text-red-600 transition-colors">Full View</span>
+            </button>
+          )}
+
           {/* Zoom Controls */}
           <button
             onClick={() => setZoom(prev => Math.min(prev + 0.5, window.innerWidth < 768 ? 5 : 3.5))}
@@ -1207,6 +1136,18 @@ export default function MapPage() {
             </svg>
           </button>
 
+          {/* Clear Route Button - Only shown when route is active */}
+          {origin && destination && origin !== destination && (
+            <button
+              onClick={handleClearRoute}
+              className="w-10 h-10 bg-red-500 text-white rounded-lg shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors"
+              title="Clear Route"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Floor Level Filter Dropdown - Now positioned relative to the button */}
@@ -1302,84 +1243,12 @@ export default function MapPage() {
             {/* Content */}
             <div className="p-4">
               <div className="w-full h-40 bg-gray-200 rounded-lg mb-4 relative overflow-hidden">
-                {selectedRoom ? (
-                  selectedRoom.imageUrl ? (
-                    <>
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-room-mobile-${selectedRoom.id}`}>
-                        <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                      </div>
-                      <Image
-                        src={selectedRoom.imageUrl}
-                        alt={`Photo of ${selectedRoom.name}`}
-                        fill
-                        className="object-cover opacity-0 transition-opacity duration-300"
-                        onError={(e) => {
-                          // Hide the image and loading state on error
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const loadingDiv = document.getElementById(`loading-room-mobile-${selectedRoom.id}`);
-                          if (loadingDiv) loadingDiv.style.display = 'none';
-                          // Show error message
-                          const parent = target.parentElement;
-                          if (parent) {
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
-                            errorDiv.innerHTML = 'Failed to load image';
-                            parent.appendChild(errorDiv);
-                          }
-                        }}
-                        onLoad={(e) => {
-                          // Show the image and hide loading state
-                          const target = e.target as HTMLImageElement;
-                          target.classList.remove('opacity-0');
-                          const loadingDiv = document.getElementById(`loading-room-mobile-${selectedRoom.id}`);
-                          if (loadingDiv) loadingDiv.classList.add('opacity-0');
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      Room photo placeholder
-                    </div>
-                  )
-                ) : selectedBuilding?.imageUrl ? (
-                  <>
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-opacity duration-300" id={`loading-${selectedBuilding.id}`}>
-                      <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                    </div>
-                    <Image
-                      src={selectedBuilding.imageUrl}
-                      alt={`Photo of ${selectedBuilding.name}`}
-                      fill
-                      className="object-cover opacity-0 transition-opacity duration-300"
-                      onError={(e) => {
-                        // Hide the image and loading state on error
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
-                        if (loadingDiv) loadingDiv.style.display = 'none';
-                        // Show error message
-                        const parent = target.parentElement;
-                        if (parent) {
-                          const errorDiv = document.createElement('div');
-                          errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
-                          errorDiv.innerHTML = 'Failed to load image';
-                          parent.appendChild(errorDiv);
-                        }
-                      }}
-                      onLoad={(e) => {
-                        // Show the image and hide loading state
-                        const target = e.target as HTMLImageElement;
-                        target.classList.remove('opacity-0');
-                        const loadingDiv = document.getElementById(`loading-${selectedBuilding.id}`);
-                        if (loadingDiv) loadingDiv.classList.add('opacity-0');
-                      }}
-                    />
-                  </>
+                {selectedRoom && (selectedRoom.imageUrl || selectedRoom.images?.length > 0) ? (
+                  <ImageCarousel images={[...(selectedRoom.imageUrl ? [selectedRoom.imageUrl] : []), ...(selectedRoom.images || [])]} className="w-full h-full" />
+                ) : selectedBuilding && (selectedBuilding.imageUrl || selectedBuilding.images?.length > 0) ? (
+                  <ImageCarousel images={[...(selectedBuilding.imageUrl ? [selectedBuilding.imageUrl] : []), ...(selectedBuilding.images || [])]} className="w-full h-full" />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    Building photo placeholder
-                  </div>
+                  <div className="flex items-center justify-center h-full text-gray-500">No images available</div>
                 )}
               </div>
               {selectedRoom ? (

@@ -1,0 +1,559 @@
+'use client';'use client';
+
+
+
+import { useState } from 'react';export function RoomForm({ room, buildings, onSubmit, onCancel, isSubmitting }: RoomFormProps) {
+
+import { Button } from '@/components/ui/button';  const [showImageEditDialog, setShowImageEditDialog] = useState(false);
+
+import { Input } from '@/components/ui/input';  const [pendingImageEdit, setPendingImageEdit] = useState<{ index: number; url: string } | null>(null);
+
+import { Label } from '@/components/ui/label';  const [formData, setFormData] = useState({
+
+import { Textarea } from '@/components/ui/textarea';    id: room?.id || '',
+
+import { Room } from '@/lib/rooms';    name: room?.name || '',
+
+import { BuildingInfo } from '@/lib/buildings';    description: room?.description || '',
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';    buildingId: room?.buildingId || '',
+
+import { ImageCarousel } from '@/components/ui/image-carousel';    floor: room?.floor || 1,
+
+    tags: room?.tags || [],
+
+interface RoomFormProps {    images: room?.images || [],
+
+  room?: Room;  });tate } from 'react';
+
+  buildings: BuildingInfo[];import { Button } from '@/components/ui/button';
+
+  onSubmit: (data: Partial<Room>) => Promise<void>;import { Input } from '@/components/ui/input';
+
+  onCancel: () => void;import { Label } from '@/components/ui/label';
+
+  isSubmitting: boolean;import { Textarea } from '@/components/ui/textarea';
+
+}import { Room } from '@/lib/rooms';
+
+import { BuildingInfo } from '@/lib/buildings';
+
+export function RoomForm({ room, buildings, onSubmit, onCancel, isSubmitting }: RoomFormProps) {import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+
+  const [showImageEditDialog, setShowImageEditDialog] = useState(false);import { ImageCarousel } from '@/components/ui/image-carousel';
+
+  const [pendingImageEdit, setPendingImageEdit] = useState<{ index: number; url: string } | null>(null);
+
+  const [formData, setFormData] = useState({interface RoomFormProps {
+
+    id: room?.id || '',  room?: Room;
+
+    name: room?.name || '',  buildings: BuildingInfo[];
+
+    description: room?.description || '',  onSubmit: (data: Partial<Room>) => Promise<void>;
+
+    buildingId: room?.buildingId || '',  onCancel: () => void;
+
+    floor: room?.floor || 1,  isSubmitting: boolean;
+
+    tags: room?.tags || [],}
+
+    images: room?.images || [],
+
+  });export function RoomForm({ room, buildings, onSubmit, onCancel, isSubmitting }: RoomFormProps) {
+
+  const [formData, setFormData] = useState({
+
+  // Process and validate image URLs    id: room?.id || '',
+
+  const processImageUrl = (url: string, index: number) => {    name: room?.name || '',
+
+    let processedUrl = url.trim();    description: room?.description || '',
+
+        buildingId: room?.buildingId || '',
+
+    if (url.includes('imgur.com/a/')) {    floor: room?.floor || 1,
+
+      const id = url.split('/a/')[1]?.split(/[^a-zA-Z0-9]/)[0];    tags: room?.tags || [],
+
+      if (id) {    images: room?.images || [],
+
+        processedUrl = `https://i.imgur.com/${id}.jpg`;  });
+
+      }
+
+    } else if (url.includes('imgur.com/')) {  // Convert regular Imgur URLs to direct image URLs
+
+      const id = url.split('imgur.com/')[1]?.split(/[^a-zA-Z0-9]/)[0];  const handleImageUrlChange = (url: string) => {
+
+      if (id) {    let processedUrl = url.trim();
+
+        processedUrl = `https://i.imgur.com/${id}.jpg`;    
+
+      }    // Convert regular Imgur URLs to direct image URLs
+
+    }    if (url.includes('imgur.com/a/')) {
+
+          // Extract ID from album URL
+
+    if (processedUrl === '' || processedUrl.startsWith('https://i.imgur.com/')) {      const id = url.split('/a/')[1]?.split(/[^a-zA-Z0-9]/)[0];
+
+      const newImages = [...formData.images];      if (id) {
+
+      newImages[index] = processedUrl;        processedUrl = `https://i.imgur.com/${id}.jpg`;
+
+      while (newImages.length > 0 && !newImages[newImages.length - 1]) {      }
+
+        newImages.pop();    } else if (url.includes('imgur.com/')) {
+
+      }      // Extract ID from regular Imgur URL
+
+      setFormData(prev => ({ ...prev, images: newImages }));      const id = url.split('imgur.com/')[1]?.split(/[^a-zA-Z0-9]/)[0];
+
+    }      if (id) {
+
+  };        processedUrl = `https://i.imgur.com/${id}.jpg`;
+
+      }
+
+  const [tagInput, setTagInput] = useState('');    }
+
+    
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {    // Only accept direct Imgur URLs or empty string
+
+    e.preventDefault();    if (processedUrl === '' || processedUrl.startsWith('https://i.imgur.com/')) {
+
+    await onSubmit(formData);      setFormData(prev => ({ ...prev, imageUrl: processedUrl }));
+
+  };    }
+
+  };
+
+  const addTag = () => {
+
+    const tag = tagInput.trim();  // State for tag input
+
+    if (tag && !formData.tags.includes(tag)) {  const [tagInput, setTagInput] = useState('');
+
+      setFormData(prev => ({
+
+        ...prev,  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+
+        tags: [...prev.tags, tag],    e.preventDefault();
+
+      }));    await onSubmit(formData);
+
+      setTagInput('');  };
+
+    }
+
+  };  const addTag = () => {
+
+    const tag = tagInput.trim();
+
+  const removeTag = (tagToRemove: string) => {    if (tag && !formData.tags.includes(tag)) {
+
+    setFormData(prev => ({      setFormData(prev => ({
+
+      ...prev,        ...prev,
+
+      tags: prev.tags.filter(tag => tag !== tagToRemove),        tags: [...prev.tags, tag],
+
+    }));      }));
+
+  };      setTagInput('');
+
+    }
+
+  return (  };
+
+    <form onSubmit={handleSubmit} className="space-y-4">
+
+      <div className="space-y-2">  const removeTag = (tagToRemove: string) => {
+
+        <Label htmlFor="name">Room Name</Label>    setFormData(prev => ({
+
+        <Input      ...prev,
+
+          id="name"      tags: prev.tags.filter(tag => tag !== tagToRemove),
+
+          value={formData.name}    }));
+
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}  };
+
+          required
+
+          placeholder="e.g., Room 301, Computer Lab 1"  return (
+
+        />    <form onSubmit={handleSubmit} className="space-y-4">
+
+      </div>      <div className="space-y-2">
+
+        <Label htmlFor="name">Room Name</Label>
+
+      <div className="space-y-2">        <Input
+
+        <Label htmlFor="buildingId">Building</Label>          id="name"
+
+        <select          value={formData.name}
+
+          id="buildingId"          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+
+          value={formData.buildingId}          required
+
+          onChange={(e) => setFormData(prev => ({ ...prev, buildingId: e.target.value }))}          placeholder="e.g., Room 301, Computer Lab 1"
+
+          required        />
+
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"      </div>
+
+        >
+
+          <option value="">Select a building</option>      <div className="space-y-2">
+
+          {buildings.map((building) => (        <Label htmlFor="buildingId">Building</Label>
+
+            <option key={building.id} value={building.id}>        <select
+
+              {building.name}          id="buildingId"
+
+            </option>          value={formData.buildingId}
+
+          ))}          onChange={(e) => setFormData(prev => ({ ...prev, buildingId: e.target.value }))}
+
+        </select>          required
+
+      </div>          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+
+        >
+
+      <div className="space-y-2">          <option value="">Select a building</option>
+
+        <Label htmlFor="floor">Floor Number</Label>          {buildings.map((building) => (
+
+        <Input            <option key={building.id} value={building.id}>
+
+          id="floor"              {building.name}
+
+          type="number"            </option>
+
+          min={1}          ))}
+
+          value={formData.floor}        </select>
+
+          onChange={(e) => setFormData(prev => ({ ...prev, floor: parseInt(e.target.value) || 1 }))}      </div>
+
+          required
+
+        />      <div className="space-y-2">
+
+      </div>        <Label htmlFor="floor">Floor Number</Label>
+
+        <Input
+
+      <div className="space-y-2">          id="floor"
+
+        <Label htmlFor="description">Description</Label>          type="number"
+
+        <Textarea          min={1}
+
+          id="description"          value={formData.floor}
+
+          value={formData.description}          onChange={(e) => setFormData(prev => ({ ...prev, floor: parseInt(e.target.value) || 1 }))}
+
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}          required
+
+          placeholder="Brief description of the room..."        />
+
+          rows={3}      </div>
+
+        />
+
+      </div>      <div className="space-y-2">
+
+        <Label htmlFor="description">Description</Label>
+
+      <div className="space-y-4">        <Textarea
+
+        <Label>Room Images (Max 3)</Label>          id="description"
+
+                  value={formData.description}
+
+        {/* Display existing images if any */}          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+
+        {formData.images.length > 0 && (          placeholder="Brief description of the room..."
+
+          <div className="mb-4 border rounded-lg p-4 bg-gray-50">          rows={3}
+
+            <h4 className="text-sm font-medium mb-2">Current Images:</h4>        />
+
+            <div className="h-48 mb-4">      </div>
+
+              <ImageCarousel images={formData.images} className="rounded-lg" />
+
+            </div>      <div className="space-y-2">
+
+          </div>        <Label>Room Images (Max 3)</Label>
+
+        )}        {[0, 1, 2].map((index) => (
+
+          <div key={index} className="flex gap-2 items-center">
+
+        {/* Image input fields */}            <Input
+
+        {[0, 1, 2].map((index) => (              value={formData.images[index] || ''}
+
+          <div key={index} className="flex gap-2 items-center">              onChange={(e) => {
+
+            <Input                let url = e.target.value.trim();
+
+              value={formData.images[index] || ''}                
+
+              onChange={(e) => {                // Convert regular Imgur URLs to direct image URLs
+
+                const url = e.target.value.trim();                if (url.includes('imgur.com/a/')) {
+
+                if (formData.images[index]) {                  const id = url.split('/a/')[1]?.split(/[^a-zA-Z0-9]/)[0];
+
+                  // If there's an existing image, show confirmation dialog                  if (id) {
+
+                  setPendingImageEdit({ index, url });                    url = `https://i.imgur.com/${id}.jpg`;
+
+                  setShowImageEditDialog(true);                  }
+
+                } else {                } else if (url.includes('imgur.com/')) {
+
+                  // If no existing image, process the URL directly                  const id = url.split('imgur.com/')[1]?.split(/[^a-zA-Z0-9]/)[0];
+
+                  processImageUrl(url, index);                  if (id) {
+
+                }                    url = `https://i.imgur.com/${id}.jpg`;
+
+              }}                  }
+
+              placeholder={`Image ${index + 1} URL (Imgur)`}                }
+
+              className="font-mono text-sm"                
+
+            />                // Only accept direct Imgur URLs or empty string
+
+            {formData.images[index] && (                if (url === '' || url.startsWith('https://i.imgur.com/')) {
+
+              <Button                  const newImages = [...formData.images];
+
+                type="button"                  newImages[index] = url;
+
+                variant="ghost"                  // Remove empty values from end of array
+
+                size="icon"                  while (newImages.length > 0 && !newImages[newImages.length - 1]) {
+
+                className="text-red-500 hover:text-red-700"                    newImages.pop();
+
+                onClick={() => {                  }
+
+                  setPendingImageEdit({ index, url: '' });                  setFormData(prev => ({ ...prev, images: newImages }));
+
+                  setShowImageEditDialog(true);                }
+
+                }}              }}
+
+              >              placeholder={`Image ${index + 1} URL (Imgur)`}
+
+                ×              className="font-mono text-sm"
+
+              </Button>            />
+
+            )}            {formData.images[index] && (
+
+          </div>              <Button
+
+        ))}                type="button"
+
+        <p className="text-xs text-gray-500">                variant="ghost"
+
+          Paste any Imgur URL - it will be automatically converted to the correct format.                size="icon"
+
+          You can add up to 3 images per room.                className="text-red-500 hover:text-red-700"
+
+        </p>                onClick={() => {
+
+      </div>                  const newImages = [...formData.images];
+
+                  newImages.splice(index, 1);
+
+      <div className="space-y-2">                  setFormData(prev => ({ ...prev, images: newImages }));
+
+        <Label htmlFor="tags">Tags</Label>                }}
+
+        <div className="flex gap-2">              >
+
+          <Input                ×
+
+            id="tags"              </Button>
+
+            value={tagInput}            )}
+
+            onChange={(e) => setTagInput(e.target.value)}          </div>
+
+            placeholder="Add tags (e.g., classroom, laboratory)"        ))}
+
+            onKeyPress={(e) => {        <p className="text-xs text-gray-500">
+
+              if (e.key === 'Enter') {          Paste any Imgur URL - it will be automatically converted to the correct format.
+
+                e.preventDefault();          You can add up to 3 images per room.
+
+                addTag();        </p>
+
+              }      </div>
+
+            }}
+
+          />      <div className="space-y-2">
+
+          <Button        <Label htmlFor="tags">Tags</Label>
+
+            type="button"        <div className="flex gap-2">
+
+            onClick={addTag}          <Input
+
+            variant="outline"            id="tags"
+
+          >            value={tagInput}
+
+            Add            onChange={(e) => setTagInput(e.target.value)}
+
+          </Button>            placeholder="Add tags (e.g., classroom, laboratory)"
+
+        </div>            onKeyPress={(e) => {
+
+        <div className="flex flex-wrap gap-2 mt-2">              if (e.key === 'Enter') {
+
+          {formData.tags.map((tag) => (                e.preventDefault();
+
+            <span                addTag();
+
+              key={tag}              }
+
+              className="px-2 py-1 bg-gray-100 rounded-full text-sm flex items-center gap-1"            }}
+
+            >          />
+
+              {tag}          <Button
+
+              <button            type="button"
+
+                type="button"            onClick={addTag}
+
+                onClick={() => removeTag(tag)}            variant="outline"
+
+                className="text-gray-500 hover:text-red-500"          >
+
+              >            Add
+
+                ×          </Button>
+
+              </button>        </div>
+
+            </span>        <div className="flex flex-wrap gap-2 mt-2">
+
+          ))}          {formData.tags.map((tag) => (
+
+        </div>            <span
+
+      </div>              key={tag}
+
+              className="px-2 py-1 bg-gray-100 rounded-full text-sm flex items-center gap-1"
+
+      <div className="flex justify-end space-x-2 pt-4">            >
+
+        <Button              {tag}
+
+          type="button"              <button
+
+          variant="outline"                type="button"
+
+          onClick={onCancel}                onClick={() => removeTag(tag)}
+
+          disabled={isSubmitting}                className="text-gray-500 hover:text-red-500"
+
+        >              >
+
+          Cancel                ×
+
+        </Button>              </button>
+
+        <Button            </span>
+
+          type="submit"          ))}
+
+          disabled={isSubmitting}        </div>
+
+        >      </div>
+
+          {isSubmitting ? 'Saving...' : room ? 'Update Room' : 'Add Room'}
+
+        </Button>      <div className="flex justify-end space-x-2 pt-4">
+
+      </div>        <Button
+
+          type="button"
+
+      {/* Image Edit Confirmation Dialog */}          variant="outline"
+
+      <Dialog open={showImageEditDialog} onOpenChange={setShowImageEditDialog}>          onClick={onCancel}
+
+        <DialogContent>          disabled={isSubmitting}
+
+          <DialogHeader>        >
+
+            <DialogTitle>          Cancel
+
+              {pendingImageEdit?.url ? 'Update Image' : 'Remove Image'}        </Button>
+
+            </DialogTitle>        <Button
+
+          </DialogHeader>          type="submit"
+
+          <p>          disabled={isSubmitting}
+
+            Are you sure you want to {pendingImageEdit?.url ? 'update' : 'remove'} this image?        >
+
+            This action cannot be undone.          {isSubmitting ? 'Saving...' : room ? 'Update Room' : 'Add Room'}
+
+          </p>        </Button>
+
+          <DialogFooter className="flex space-x-2">      </div>
+
+            <Button    </form>
+
+              type="button"  );
+
+              variant="outline"}
+
+              onClick={() => {
+                setShowImageEditDialog(false);
+                setPendingImageEdit(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (pendingImageEdit) {
+                  processImageUrl(pendingImageEdit.url, pendingImageEdit.index);
+                }
+                setShowImageEditDialog(false);
+                setPendingImageEdit(null);
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </form>
+  );
+}

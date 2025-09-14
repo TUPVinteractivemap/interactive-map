@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     // Handle redirection in useEffect
     if (!loading && user && isAdmin) {
-      router.replace('/admin/map-editor');
+      router.replace('/admin/dashboard');
     }
   }, [user, isAdmin, loading, router]);
 
