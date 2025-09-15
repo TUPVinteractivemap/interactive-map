@@ -95,16 +95,23 @@ async function setCenterInsidePolygon(buildingId, points, nudgeX = 0, nudgeY = 0
 }
 
 async function main() {
-  // Administration Building (already adjusted earlier) - keep last inside solution with small nudge
-  await setCenterInsidePolygon('AdminisitrationBldg', [
-    [997, 273],
-    [1123, 345.746],
-    [1049.53, 473],
-    [1027.5, 460.281],
-    [1080.49, 368.5],
-    [1074.39, 345.746],
-    [984.5, 293.846],
-  ], 4, -4);
+  // Administration Building - manually setting the center point in the yellow section
+  const adminRef = db.collection('buildings').doc('AdminisitrationBldg');
+  await adminRef.update({
+    center: {
+      x: 1058,
+      y: 410
+    }
+  });
+  console.log('  ✅ updated AdminisitrationBldg center to fixed point.');
+
+  // Technology Building
+  await setCenterInsidePolygon('TechnologyBldg', [
+    [815, 70],  // Top left
+    [1040, 70], // Top right
+    [1040, 200], // Bottom right
+    [815, 200],  // Bottom left
+  ]);
 
   // Modern Technology Building
   await setCenterInsidePolygon('ModernTechnologyBldg', [
