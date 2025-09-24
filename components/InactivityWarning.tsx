@@ -12,6 +12,7 @@ export default function InactivityWarning({ timeout, onLogout }: InactivityWarni
   const [showWarning, setShowWarning] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60); // 60 seconds warning
+  const [resetTrigger, setResetTrigger] = useState(0); // Used to reset timers
 
   useEffect(() => {
     const warningTime = timeout - (60 * 1000); // Show warning 1 minute before logout
@@ -31,7 +32,7 @@ export default function InactivityWarning({ timeout, onLogout }: InactivityWarni
       clearTimeout(inactivityTimer);
       clearTimeout(logoutTimer);
     };
-  }, [timeout, onLogout]);
+  }, [timeout, onLogout, resetTrigger]);
 
   useEffect(() => {
     if (showWarning) {
@@ -52,8 +53,7 @@ export default function InactivityWarning({ timeout, onLogout }: InactivityWarni
   const handleStayLoggedIn = () => {
     setShowWarning(false);
     setTimeLeft(60);
-    // Reset the timer by triggering a user activity
-    window.dispatchEvent(new Event('click'));
+    setResetTrigger(prev => prev + 1); // Reset the timers
   };
 
   const handleLogoutClick = () => {
