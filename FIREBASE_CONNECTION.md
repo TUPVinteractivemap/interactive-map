@@ -134,49 +134,73 @@ export async function checkAdminStatus(uid: string): Promise<boolean> {
 
 ### Admin SDK Configuration (`lib/firebase-admin.ts`)
 
-The Firebase Admin SDK provides server-side access to Firebase services with full administrative privileges.
+The Firebase Admin SDK provides server-side access to Firebase services with full administrative privileges. This implementation supports both local development and cloud deployment environments.
 
 ```typescript
 import admin from 'firebase-admin';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
-// Declare variable to hold service account credentials
 let serviceAccount: admin.ServiceAccount;
 
 try {
-  // Construct path to service account key file
-  const serviceAccountPath = join(process.cwd(), 'firebase-admin-key.json');
+  // Try to read service account from environment variable first (for Vercel deployment)
+  const serviceAccountJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY;
 
-  // Read the JSON file containing service account credentials
-  const serviceAccountJson = readFileSync(serviceAccountPath, 'utf8');
+  if (serviceAccountJson) {
+    // Parse service account from environment variable (Vercel/Cloud deployments)
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } else {
+    // Fallback to reading from file (for local development)
+    const { readFileSync } = require('fs');
+    const { join } = require('path');
 
-  // Parse JSON string into service account object
-  serviceAccount = JSON.parse(serviceAccountJson);
+    const serviceAccountPath = join(process.cwd(), 'firebase-admin-key.json');
+    const fileContent = readFileSync(serviceAccountPath, 'utf8');
+    serviceAccount = JSON.parse(fileContent);
+  }
 } catch (error) {
   console.error('Error reading Firebase admin key:', error);
-  // Throw error if credentials can't be loaded - app cannot function without them
-  throw new Error('Firebase admin key not found or invalid');
+  throw new Error('Firebase admin key not found or invalid. Make sure FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY environment variable is set or firebase-admin-key.json file exists.');
 }
 
-// Initialize Firebase Admin SDK only if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount), // Use certificate authentication
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 
-// Export initialization function for use in scripts
 export function initAdmin() {
   return admin;
 }
 ```
 
 **Key Features:**
-- **Server-side Authentication**: Uses service account credentials instead of OAuth tokens
-- **Full Database Access**: Bypasses Firestore security rules for administrative operations
-- **File-based Credentials**: Reads credentials from `firebase-admin-key.json` file
-- **Singleton Initialization**: Prevents multiple Admin SDK initializations
+- **Environment Variable Priority**: Checks for `FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY` first (for cloud deployments)
+- **File Fallback**: Falls back to reading `firebase-admin-key.json` for local development
+- **Deployment Ready**: Works seamlessly in Vercel, Netlify, and other cloud platforms
+- **Security**: Keeps sensitive credentials out of version control in production
+
+### Environment Variables for Deployment
+
+For **Vercel deployment**, add this environment variable in your Vercel dashboard:
+
+```env
+FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"your_project_id","private_key_id":"your_private_key_id","private_key":"-----BEGIN PRIVATE KEY-----\n...","client_email":"firebase-adminsdk-...@your_project.iam.gserviceaccount.com","client_id":"your_client_id","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/..."}
+
+# Other Firebase environment variables (same as before)
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
+
+**How to set up for Vercel:**
+1. Go to your Vercel project dashboard
+2. Navigate to Settings → Environment Variables
+3. Add `FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY` as a variable
+4. Copy the entire JSON content from your `firebase-admin-key.json` file as the value
+5. Make sure it's set for Production, Preview, and Development environments
 
 ### Service Account Key (`firebase-admin-key.json`)
 
