@@ -7,6 +7,34 @@ import { logRouteNavigation } from '@/lib/userHistory';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useHistoryContext } from '@/contexts/HistoryContext';
 
+type MapTheme = 'default' | 'floor-based' | 'blackout';
+
+// Color mapping for different floors
+const floorColors: Record<number, string> = {
+  1: '#4287f5', // Blue
+  2: '#f54242', // Red
+  3: '#f5d742', // Yellow
+  4: '#42f584', // Green
+  5: '#9942f5', // Purple
+  6: '#f542aa', // Pink
+  7: '#42f5f5', // Cyan
+  8: '#f5a142', // Orange
+};
+
+// Color mapping for building types in default theme
+const buildingTypeColors: Record<string, string> = {
+  'Academic': '#678DFF',
+  'Administrative': '#FF6D6D',
+  'Recreational': '#FFC76D',
+  'Conservation': '#63FFFF',
+  'Multipurpose': '#1B9C00',
+  'IGP': '#FF946D',
+  'Utilities': '#B163FF',
+  'Security': '#FFFFFF',
+  'Parking': '#4A4A4A',
+  'Open Space': '#77E360',
+};
+
 
 interface InteractiveMapProps {
   zoom: number;
@@ -16,8 +44,11 @@ interface InteractiveMapProps {
   showInlineInfo?: boolean;
   activeFloor?: number;
   highlightedBuilding?: string;
+  highlightedFloor?: number;
   selectedFloorLevel?: number | 'all';
   showLabels?: boolean;
+  theme?: MapTheme;
+  routeActive?: boolean;
 }
 
 export default function InteractiveMap({
@@ -28,8 +59,11 @@ export default function InteractiveMap({
   showInlineInfo = true,
   activeFloor,
   highlightedBuilding,
+  highlightedFloor,
   selectedFloorLevel = 'all',
-  showLabels: externalShowLabels
+  showLabels: externalShowLabels,
+  theme = 'default',
+  routeActive = false
 }: InteractiveMapProps) {
   const { user } = useAuthContext();
   const { refreshRoutes, refreshHistory } = useHistoryContext();
@@ -351,39 +385,60 @@ export default function InteractiveMap({
     const isHighlighted = highlightedBuilding === buildingId;
     const isHovered = hoveredBuilding === buildingId;
 
-    // Default color based on building type
-    const getDefaultColor = () => {
-      switch (type) {
-        case 'Academic':
+    // Get color based on current theme and building properties
+    const getThemeColor = () => {
+      switch (theme) {
+        case 'floor-based':
+          // Use floor-based colors
+          if (building) {
+            return floorColors[building.floors] || '#678DFF';
+          }
           return '#678DFF';
-        case 'Administrative':
-          return '#FF6D6D';
-        case 'Recreational':
-          return '#FFC76D';
-        case 'Conservation':
-          return '#63FFFF';
-        case 'Multipurpose':
-          return '#1B9C00';
-        case 'IGP':
-          return '#FF946D';
-        case 'Utilities':
-          return '#B163FF';
-        case 'Security':
-          return '#FFFFFF';
-        case 'Parking':
-          return '#4A4A4A';
-        case 'Open Space':
-          return '#77E360';
+        
+        case 'blackout':
+          // Use grayscale colors
+          return '#404040';
+        
+        case 'default':
         default:
-          return '#678DFF';
+          // Use building type colors
+          return buildingTypeColors[type] || '#678DFF';
       }
     };
 
-    // Priority: Highlighted > Hovered > Floor Filter > Default
-    if (isHighlighted) {
-      // Building is highlighted from search - use same yellow as hover
-      color = '#FFD700'; // Gold for highlighted buildings (same as hover)
-      opacity = 1;
+    // Priority: Route > Highlighted > Hovered > Floor Filter > Theme Color
+    if (routeActive) {
+      // If there's an active route, apply blackout theme to non-selected buildings
+      if (buildingId === origin || buildingId === destination) {
+        // Origin and destination buildings remain highlighted
+        color = '#FFD700'; // Gold for selected buildings
+        opacity = 1;
+      } else {
+        // All other buildings use blackout theme
+        color = '#404040'; // Dark gray
+        opacity = 0.4;
+      }
+    } else if (isHighlighted) {
+      // Building is highlighted from search
+      if (highlightedFloor !== undefined && building) {
+        if (building.floors >= highlightedFloor) {
+          // Use the floor color if the building has the highlighted floor
+          color = floorColors[highlightedFloor] || '#678DFF';
+          opacity = 1;
+        } else {
+          // Use blackout theme for buildings that don't have the floor
+          color = '#404040';
+          opacity = 0.4;
+        }
+      } else {
+        // Default highlight behavior if no floor is specified
+        color = '#FFD700'; // Gold for highlighted buildings
+        opacity = 1;
+      }
+    } else if (highlightedBuilding) {
+      // If any building is highlighted, apply blackout to non-highlighted buildings
+      color = '#404040';
+      opacity = 0.4;
     } else if (isHovered) {
       // Building is being hovered
       color = '#FFD700'; // Gold for hover
@@ -393,21 +448,21 @@ export default function InteractiveMap({
       if (building.floors < selectedFloorLevel) {
         // Building doesn't have the selected floor level, show in gray
         color = '#D3D3D3'; // Light gray for non-matching buildings
-        opacity = 0.6;
+        opacity = theme === 'blackout' ? 0.3 : 0.6;
       } else {
-        // Building has the selected floor level, show normal color
-        color = getDefaultColor();
-        opacity = 1;
+        // Building has the selected floor level
+        color = theme === 'floor-based' ? floorColors[selectedFloorLevel] || getThemeColor() : getThemeColor();
+        opacity = theme === 'blackout' ? 0.8 : 1;
       }
     } else {
-      // Default state
-      color = getDefaultColor();
+      // Theme-based coloring
+      color = getThemeColor();
       
       // If there's an active floor and this building has multiple floors, reduce opacity slightly
       if (activeFloor !== undefined && building?.floors > 1 && !isHighlighted) {
-        opacity = 0.7;
+        opacity = theme === 'blackout' ? 0.4 : 0.7;
       } else {
-        opacity = 1;
+        opacity = theme === 'blackout' ? 0.8 : 1;
       }
     }
 
@@ -566,28 +621,28 @@ export default function InteractiveMap({
             })}
           </g>
 
-          {/* Building Labels - only show when zoomed in enough */}
+          {/* Building Labels - only show when hovering and zoomed in enough */}
           {!loading && localZoom > 1.2 && showLabels && Object.keys(labelPositions).length > 0 && (
             <g id="building-labels">
               {Object.entries(buildings).map(([buildingId, building]) => {
                 const position = labelPositions[buildingId];
-                if (!position) return null;
-
+                const isHovered = hoveredBuilding === buildingId;
+                if (!position || !isHovered) return null;
 
                 return (
                   <g key={`label-${buildingId}`}>
-                    {/* Building name text - no background */}
+                    {/* Building name text with enhanced visibility */}
                     <text
                       x={position.x}
                       y={position.y + 3}
                       textAnchor="middle"
-                      className="text-xs font-medium select-none"
+                      className="text-xs font-bold select-none"
                       style={{
-                        fontSize: '8px',
-                        fill: '#1a1a1a',
+                        fontSize: '9px',
+                        fill: '#000000',
                         pointerEvents: 'none',
                         fontFamily: 'system-ui, -apple-system, sans-serif',
-                        textShadow: '0px 0px 2px rgba(255, 255, 255, 0.8)'
+                        textShadow: '0px 0px 3px rgba(255, 255, 255, 1)'
                       }}
                     >
                       {building.name}

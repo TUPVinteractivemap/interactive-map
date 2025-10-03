@@ -43,6 +43,7 @@ export default function MapPage() {
   const [showFloorFilter, setShowFloorFilter] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [mapTheme, setMapTheme] = useState<'default' | 'floor-based' | 'blackout'>('default');
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const { refreshRoomSearches, refreshBuildingSearches } = useHistoryContext();
@@ -1141,13 +1142,13 @@ export default function MapPage() {
           {/* No clear route button in map controls anymore */}
         </div>
 
-        {/* Floor Level Filter Dropdown - Now positioned relative to the button */}
+          {/* Floor Level Filter and Theme Selector Dropdown */}
         {showFloorFilter && (
           <div className="absolute top-32 right-2 md:top-52 md:right-4 z-40">
             <div className="bg-white rounded-lg shadow-lg p-3 min-w-[220px]">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Floor Level Filter
+                  Map Display Options
                 </label>
                 <button
                   onClick={() => setShowFloorFilter(false)}
@@ -1158,27 +1159,50 @@ export default function MapPage() {
                   </svg>
                 </button>
               </div>
-              <select
-                id="floor-level-filter"
-                value={selectedFloorLevel}
-                onChange={(e) => setSelectedFloorLevel(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              >
-                <option value="all">All Floors</option>
-                {getAvailableFloorLevels().map(level => (
-                  <option key={level} value={level}>
-                    Floor {level}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Buildings with {selectedFloorLevel === 'all' ? 'any floor level' : `at least ${selectedFloorLevel} floor${selectedFloorLevel === 1 ? '' : 's'}`} will be highlighted
-              </p>
+              
+              {/* Floor Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Floor Level Filter</label>
+                <select
+                  id="floor-level-filter"
+                  value={selectedFloorLevel}
+                  onChange={(e) => setSelectedFloorLevel(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="all">All Floors</option>
+                  {getAvailableFloorLevels().map(level => (
+                    <option key={level} value={level}>
+                      Floor {level}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Buildings with {selectedFloorLevel === 'all' ? 'any floor level' : `at least ${selectedFloorLevel} floor${selectedFloorLevel === 1 ? '' : 's'}`} will be highlighted
+                </p>
+              </div>
+
+              {/* Theme Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Color Theme</label>
+                <select
+                  id="map-theme"
+                  value={mapTheme}
+                  onChange={(e) => setMapTheme(e.target.value as 'default' | 'floor-based' | 'blackout')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="default">Default Theme (By Building Type)</option>
+                  <option value="floor-based">Floor-based Colors</option>
+                  <option value="blackout">Blackout Theme</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {mapTheme === 'default' && 'Colors buildings based on their type (Academic, Administrative, etc.)'}
+                  {mapTheme === 'floor-based' && 'Colors buildings based on their number of floors'}
+                  {mapTheme === 'blackout' && 'Uses grayscale colors for all buildings'}
+                </p>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Map Container */}
+        )}        {/* Map Container */}
         <div 
           className="absolute inset-0 flex items-center justify-center"
           onWheel={handleWheel}
@@ -1196,9 +1220,12 @@ export default function MapPage() {
             }}
             activeFloor={activeFloor}
             highlightedBuilding={selectedBuilding?.id || selectedRoom?.buildingId}
+            highlightedFloor={selectedRoom?.floor}
             showInlineInfo={false}
             selectedFloorLevel={selectedFloorLevel}
             showLabels={showLabels}
+            theme={mapTheme}
+            routeActive={!!origin && !!destination && origin !== destination}
           />
         </div>
       </div>
