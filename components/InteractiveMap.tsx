@@ -474,6 +474,13 @@ export default function InteractiveMap({
 
   // Get style for open spaces (areas that are not buildings)
   const getOpenSpaceStyle = () => {
+    // When a route is active or a building is highlighted, apply blackout
+    if (routeActive || highlightedBuilding) {
+      return {
+        fill: '#404040', // Dark gray for blackout
+        opacity: 0.4,
+      };
+    }
     // When a floor level is selected, show open spaces in gray
     if (selectedFloorLevel !== 'all') {
       return {
@@ -560,13 +567,13 @@ export default function InteractiveMap({
           <path id="OpenSpace6" d="M971 773L971.083 772.91M971.083 772.91L977 766.5L1004.42 719L1027 730L1034.5 733L1038.5 726.5L932.845 665.5L895.895 729.5L971.083 772.91Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
 
           {/* Conservation Area Zones */}
-          <path id="GardenWithGazebo" d="M1110.5 627L1035 584L1006.5 635L1081 678L1110.5 627Z" fill="#63FFFF" stroke="#1E1E1E"/>
-          <path id="Garden" d="M982 453.5L987.5 456.5L984 462.5L996.5 470L998.5 466.5L1011.5 474.5L983.5 523L967 513L964 517.5L949.5 509.5L982 453.5Z" fill="#63FFFF" stroke="#1E1E1E"/>
+          <path id="GardenWithGazebo" d="M1110.5 627L1035 584L1006.5 635L1081 678L1110.5 627Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
+          <path id="Garden" d="M982 453.5L987.5 456.5L984 462.5L996.5 470L998.5 466.5L1011.5 474.5L983.5 523L967 513L964 517.5L949.5 509.5L982 453.5Z" {...getOpenSpaceStyle()} stroke="#1E1E1E"/>
 
           {/* Parking Spaces */}
-          <path id="ParkingSpace1" d="M798 303.5L802 297L826.672 311.5L855 262.435L895.5 285.818L907.94 293L908.44 292.5L924.028 301.5L837.426 451.5L782 419.5L819 354.707L822.106 356.5L836.5 331.57L803.471 312.5L806 308.119L798 303.5Z" fill="#BAB9B9" stroke="black"/>
-          <path id="ParkingSpace2" d="M1162 526.346L1253.5 367.863L1168 318.5L1166 317.345L1074.5 475.828L1162 526.346Z" fill="#BAB9B9" stroke="black"/>
-          <path id="CoveredParkingSpace" d="M1046 699.5L957.5 650L947 669.5L1034.5 719.5L1046 699.5Z" fill="#BAB9B9" stroke="black"/>
+          <path id="ParkingSpace1" d="M798 303.5L802 297L826.672 311.5L855 262.435L895.5 285.818L907.94 293L908.44 292.5L924.028 301.5L837.426 451.5L782 419.5L819 354.707L822.106 356.5L836.5 331.57L803.471 312.5L806 308.119L798 303.5Z" {...getBuildingStyle('parking1', 'Parking')} stroke="#1E1E1E"/>
+          <path id="ParkingSpace2" d="M1162 526.346L1253.5 367.863L1168 318.5L1166 317.345L1074.5 475.828L1162 526.346Z" {...getBuildingStyle('parking2', 'Parking')} stroke="#1E1E1E"/>
+          <path id="CoveredParkingSpace" d="M1046 699.5L957.5 650L947 669.5L1034.5 719.5L1046 699.5Z" {...getBuildingStyle('parking3', 'Parking')} stroke="#1E1E1E"/>
 
           {/* Route Visualization moved later to render above buildings */}
 
