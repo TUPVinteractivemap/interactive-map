@@ -629,20 +629,20 @@ export default function InteractiveMap({
           </g>
 
           {/* Building Labels - only show when hovering and zoomed in enough */}
-          {!loading && localZoom > 1.2 && showLabels && Object.keys(labelPositions).length > 0 && (
+          {!loading && localZoom > 1.2 && showLabels && (
             <g id="building-labels">
               {Object.entries(buildings).map(([buildingId, building]) => {
-                const position = labelPositions[buildingId];
                 const isHovered = hoveredBuilding === buildingId;
-                if (!position || !isHovered) return null;
+                if (!isHovered) return null;
 
                 return (
                   <g key={`label-${buildingId}`}>
                     {/* Building name text with enhanced visibility */}
                     <text
-                      x={position.x}
-                      y={position.y + 3}
+                      x={building.center.x}
+                      y={building.center.y}
                       textAnchor="middle"
+                      dominantBaseline="middle"
                       className="text-xs font-bold select-none"
                       style={{
                         fontSize: '9px',
